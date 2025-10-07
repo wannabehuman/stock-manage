@@ -1,0 +1,248 @@
+/* ========================================
+   Common Layout Styles
+======================================== */
+
+/* Page Layout */
+.page-container {
+  @apply h-[calc(100vh-2rem)] flex flex-col overflow-hidden;
+}
+
+.page-header {
+  @apply mb-4 flex-shrink-0;
+}
+
+.page-content {
+  @apply flex-1 flex flex-col min-h-0;
+}
+
+.page-footer {
+  @apply mt-4 flex-shrink-0;
+}
+
+/* Section Layouts */
+.section-container {
+  @apply flex-shrink-0;
+}
+
+.section-content {
+  @apply flex-1 flex flex-col min-h-0;
+}
+
+/* Flexbox Utilities */
+.flex-center {
+  @apply flex items-center justify-center;
+}
+
+.flex-between {
+  @apply flex items-center justify-between;
+}
+
+.flex-start {
+  @apply flex items-center justify-start;
+}
+
+.flex-end {
+  @apply flex items-center justify-end;
+}
+
+.flex-col-center {
+  @apply flex flex-col items-center justify-center;
+}
+
+.flex-col-between {
+  @apply flex flex-col justify-between;
+}
+
+.flex-col-start {
+  @apply flex flex-col justify-start;
+}
+
+.flex-col-end {
+  @apply flex flex-col justify-end;
+}
+
+/* Spacing Utilities */
+.gap-xs {
+  @apply gap-1;
+}
+
+.gap-sm {
+  @apply gap-2;
+}
+
+.gap-md {
+  @apply gap-4;
+}
+
+.gap-lg {
+  @apply gap-6;
+}
+
+.gap-xl {
+  @apply gap-8;
+}
+
+/* Container Sizes */
+.container-xs {
+  @apply max-w-xs mx-auto;
+}
+
+.container-sm {
+  @apply max-w-sm mx-auto;
+}
+
+.container-md {
+  @apply max-w-md mx-auto;
+}
+
+.container-lg {
+  @apply max-w-lg mx-auto;
+}
+
+.container-xl {
+  @apply max-w-xl mx-auto;
+}
+
+.container-full {
+  @apply w-full max-w-full;
+}
+
+/* Breadcrumb Layouts */
+.breadcrumb-container {
+  @apply mb-4 flex-shrink-0;
+}
+
+.breadcrumb-responsive {
+  @apply bg-gray-50 dark:bg-gray-800 p-3 rounded-lg w-full;
+}
+
+/* Content Areas */
+.content-area {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700;
+}
+
+.content-area-transparent {
+  @apply bg-transparent;
+}
+
+.content-area-compact {
+  @apply p-3;
+}
+
+.content-area-normal {
+  @apply p-4;
+}
+
+.content-area-spacious {
+  @apply p-6;
+}
+
+/* Sidebar Layouts */
+.sidebar-layout {
+  @apply flex h-screen;
+}
+
+.sidebar-content {
+  @apply flex-1 flex flex-col overflow-hidden;
+}
+
+.main-content {
+  @apply flex-1 p-6 overflow-auto;
+}
+
+/* Modal/Dialog Layouts */
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+}
+
+.modal-container {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4;
+}
+
+.modal-header {
+  @apply px-6 py-4 border-b border-gray-200 dark:border-gray-700;
+}
+
+.modal-body {
+  @apply px-6 py-4;
+}
+
+.modal-footer {
+  @apply px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3;
+}
+
+/* Loading States */
+.loading-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.loading-spinner {
+  @apply animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600;
+}
+
+.loading-text {
+  @apply ml-3 text-gray-600 dark:text-gray-400;
+}
+
+/* Empty States */
+.empty-state {
+  @apply text-center py-12;
+}
+
+.empty-state-icon {
+  @apply w-16 h-16 mx-auto text-gray-400 mb-4;
+}
+
+.empty-state-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white mb-2;
+}
+
+.empty-state-description {
+  @apply text-gray-600 dark:text-gray-400 mb-4;
+}
+
+/* Error States */
+.error-state {
+  @apply text-center py-12;
+}
+
+.error-state-icon {
+  @apply w-16 h-16 mx-auto text-red-400 mb-4;
+}
+
+.error-state-title {
+  @apply text-lg font-semibold text-red-900 dark:text-red-400 mb-2;
+}
+
+.error-state-description {
+  @apply text-red-600 dark:text-red-400 mb-4;
+}
+
+/* Responsive Utilities */
+@media (max-width: 640px) {
+  .mobile-hidden {
+    @apply hidden;
+  }
+  
+  .mobile-visible {
+    @apply block;
+  }
+  
+  .mobile-stack {
+    @apply flex-col;
+  }
+  
+  .mobile-full {
+    @apply w-full;
+  }
+}
+
+@media (min-width: 641px) {
+  .desktop-hidden {
+    @apply hidden;
+  }
+  
+  .desktop-visible {
+    @apply block;
+  }
+}

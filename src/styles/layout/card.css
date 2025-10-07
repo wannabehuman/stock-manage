@@ -1,0 +1,78 @@
+/* ========================================
+   Card Layout Styles
+======================================== */
+
+/* Base Card Styling - already handled by Flowbite, but custom enhancements */
+.card-responsive {
+  @apply w-full max-w-full overflow-hidden;
+  @apply flex-1 flex flex-col;
+}
+
+.card-header {
+  @apply flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4 flex-shrink-0;
+}
+
+.card-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0;
+}
+
+.card-actions {
+  @apply flex gap-2 flex-shrink-0;
+  @apply w-full sm:w-auto;
+}
+
+.card-content {
+  @apply w-full flex-1 min-h-0 overflow-x-auto;
+  width: 100% !important;
+}
+
+/* Card container for full-height layouts */
+.card-full-height {
+  @apply h-[calc(100vh-2rem)] flex flex-col overflow-hidden;
+}
+
+/* Card spacing adjustments */
+.card-compact {
+  @apply p-3;
+}
+
+.card-normal {
+  @apply p-4;
+}
+
+.card-spacious {
+  @apply p-6;
+}
+
+/* Card shadows for better depth */
+.card-elevated {
+  @apply shadow-lg;
+}
+
+.card-floating {
+  @apply shadow-xl;
+}
+
+/* Card borders */
+.card-bordered {
+  @apply border border-gray-200 dark:border-gray-700;
+}
+
+.card-rounded {
+  @apply rounded-lg;
+}
+
+/* Responsive card adjustments */
+@media (max-width: 640px) {
+  .card-mobile-stack .card-header {
+    @apply flex-col gap-3;
+  }
+  
+  .card-mobile-stack .card-actions {
+    @apply w-full;
+  }
+  
+  .card-mobile-stack .card-actions > * {
+    @apply flex-1;
+  }
+}

@@ -1,0 +1,339 @@
+/* Tabulator CSS */
+@import 'tabulator-tables/dist/css/tabulator.min.css';
+
+/* Modular CSS Imports - Must be before Tailwind */
+@import url('./styles/layout/layout.css');
+@import url('./styles/layout/card.css');
+@import url('./styles/layout/form.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   Tabulator Custom Styling - Light/Dark Mode
+======================================== */
+
+/* Tabulator Base Container */
+.tabulator {
+  @apply border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm;
+  @apply bg-gray-50 dark:bg-gray-900;
+  @apply text-gray-900 dark:text-gray-100;
+  font-family: inherit;
+  table-layout: fixed !important;
+  width: 100% !important;
+}
+
+/* Header Styling */
+.tabulator .tabulator-header {
+  @apply bg-gray-50 border-b border-gray-200 rounded-t-lg;
+  @apply text-gray-900;
+  table-layout: fixed !important;
+  width: 100% !important;
+  border-left: 4px solid transparent !important; /* row status border와 맞추기 위한 공간 */
+}
+
+/* 다크모드 헤더 강제 적용 */
+.dark .tabulator .tabulator-header {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+  border-bottom-color: rgb(75 85 99) !important; /* gray-600 */
+  color: rgb(243 244 246) !important; /* gray-100 */
+  border-left: 4px solid transparent !important; /* row status border와 맞추기 위한 공간 */
+}
+
+.tabulator .tabulator-col {
+  @apply bg-transparent border-r border-gray-200 font-medium text-sm;
+  @apply text-gray-900;
+  box-sizing: border-box !important;
+}
+
+.tabulator .tabulator-col .tabulator-col-content {
+  box-sizing: border-box !important;
+  padding: 8px 12px !important;
+}
+
+/* 다크모드 컬럼 강제 적용 */
+.dark .tabulator .tabulator-col {
+  background-color: rgb(55 65 81) !important; /* gray-700 - 헤더와 동일 */
+  border-right-color: rgb(75 85 99) !important; /* gray-600 */
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.tabulator .tabulator-col:last-child {
+  @apply border-r-0;
+}
+
+.tabulator .tabulator-col .tabulator-col-content {
+  @apply text-gray-900 dark:text-gray-100;
+}
+
+.tabulator .tabulator-col-title {
+  @apply text-gray-900 dark:text-gray-100 font-semibold !important;
+}
+
+.tabulator .tabulator-col-title-holder {
+  @apply text-gray-900 dark:text-gray-100;
+}
+
+.tabulator .tabulator-col-sorter {
+  @apply text-blue-600 dark:text-blue-400;
+}
+
+/* 헤더 호버 효과 */
+.tabulator .tabulator-col:hover {
+  @apply bg-gray-100 text-gray-900;
+}
+
+.dark .tabulator .tabulator-col:hover {
+  background-color: rgb(75 85 99) !important; /* gray-600 */
+  color: rgb(255 255 255) !important; /* white */
+}
+
+/* 정렬 가능한 컬럼 스타일 */
+.tabulator .tabulator-col.tabulator-sortable {
+  @apply cursor-pointer;
+}
+
+.tabulator .tabulator-col.tabulator-sortable:hover {
+  @apply bg-gray-100;
+}
+
+.dark .tabulator .tabulator-col.tabulator-sortable:hover {
+  background-color: rgb(75 85 99) !important; /* gray-600 */
+}
+
+.tabulator .tabulator-col.tabulator-sortable .tabulator-col-title {
+  @apply text-gray-900 dark:text-gray-100 !important;
+}
+
+/* Row Styling */
+.tabulator .tabulator-tableHolder {
+  @apply bg-gray-50 dark:bg-gray-900;
+}
+
+.tabulator .tabulator-table {
+  @apply bg-transparent;
+  table-layout: fixed !important;
+  width: 100% !important;
+}
+
+.tabulator .tabulator-row {
+  @apply bg-gray-50 dark:bg-gray-900;
+  @apply border-b border-gray-100 dark:border-gray-700;
+  @apply text-gray-900 dark:text-gray-100;
+  @apply transition-colors duration-150;
+  border-left: 4px solid transparent; /* 기본 투명 border로 헤더와 정렬 */
+}
+
+.tabulator .tabulator-row:nth-child(even) {
+  @apply bg-gray-50 dark:bg-gray-900;
+}
+
+.tabulator .tabulator-row:hover {
+  @apply bg-gray-50 dark:bg-gray-900;
+}
+
+.tabulator .tabulator-row.tabulator-selected {
+  @apply bg-blue-100 dark:bg-blue-900/30;
+}
+
+.tabulator .tabulator-row.tabulator-selected:hover {
+  @apply bg-blue-200 dark:bg-blue-900/50;
+}
+
+/* Cell Styling */
+.tabulator .tabulator-cell {
+  @apply border-r border-gray-100 dark:border-gray-700;
+  @apply text-sm;
+  box-sizing: border-box !important;
+  padding: 8px 12px !important;
+}
+
+.tabulator .tabulator-cell:last-child {
+  @apply border-r-0;
+}
+
+.tabulator .tabulator-cell.tabulator-editing {
+  @apply bg-blue-50 dark:bg-blue-900/20;
+  @apply outline outline-2 outline-blue-500 dark:outline-blue-400;
+}
+
+/* Input Styling in Cells - 프로젝트 input과 동일하게 */
+.tabulator .tabulator-cell input,
+.tabulator .tabulator-cell select,
+.tabulator .tabulator-cell textarea {
+  @apply bg-gray-50 dark:bg-gray-700 !important;
+  @apply border border-gray-300 dark:border-gray-600 !important;
+  @apply text-gray-900 dark:text-gray-100 !important;
+  @apply rounded-lg px-3 py-2 !important;
+  @apply text-sm !important;
+  @apply focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 !important;
+  @apply focus:border-blue-500 dark:focus:border-blue-400 !important;
+  @apply transition-colors duration-150 !important;
+}
+
+/* Footer Styling */
+.tabulator .tabulator-footer {
+  @apply bg-gray-50 dark:bg-gray-700;
+  @apply border-t border-gray-200 dark:border-gray-600;
+  @apply rounded-b-lg;
+  @apply text-gray-700 dark:text-gray-300;
+}
+
+/* Pagination Styling */
+.tabulator .tabulator-paginator {
+  @apply text-gray-700 dark:text-gray-300;
+}
+
+.tabulator .tabulator-page {
+  @apply bg-white dark:bg-gray-700;
+  @apply border border-gray-300 dark:border-gray-600;
+  @apply text-gray-700 dark:text-gray-300;
+  @apply hover:bg-gray-50 dark:hover:bg-gray-600;
+  @apply rounded-md mx-1 px-3 py-1;
+}
+
+.tabulator .tabulator-page.active {
+  @apply bg-blue-600 dark:bg-blue-500;
+  @apply text-white;
+  @apply border-blue-600 dark:border-blue-500;
+}
+
+/* Loading Overlay */
+.tabulator .tabulator-loader {
+  @apply bg-white/80 dark:bg-gray-800/80;
+  @apply backdrop-blur-sm;
+}
+
+.tabulator .tabulator-loader-msg {
+  @apply bg-white dark:bg-gray-800;
+  @apply text-gray-900 dark:text-gray-100;
+  @apply border border-gray-200 dark:border-gray-700;
+  @apply rounded-lg shadow-lg;
+  @apply px-4 py-2;
+}
+
+/* Placeholder */
+.tabulator .tabulator-placeholder {
+  @apply text-gray-500 dark:text-gray-400;
+  @apply bg-gray-50 dark:bg-gray-800;
+  @apply text-center py-8;
+}
+
+/* Resize Handle */
+.tabulator .tabulator-col-resize-handle {
+  @apply bg-gray-300 dark:bg-gray-600;
+}
+
+.tabulator .tabulator-col-resize-handle:hover {
+  @apply bg-blue-500 dark:bg-blue-400;
+}
+
+/* Sort Icons */
+.tabulator .tabulator-arrow {
+  @apply border-gray-400 dark:border-gray-500;
+}
+
+/* ========================================
+   Row Status Styles (Enhanced)
+======================================== */
+
+/* Deleted Row */
+.tabulator .tabulator-row.row-dl {
+  @apply line-through opacity-75;
+  border-left: 4px solid rgb(239 68 68) !important; /* red-500 */
+}
+
+/* Error Row */
+.tabulator .tabulator-row.row-er {
+  border-left: 4px solid rgb(239 68 68) !important; /* red-500 */
+}
+
+/* Updated Row - 수정된 행 */
+.tabulator .tabulator-row.row-ud {
+  border-left: 4px solid rgb(245 158 11) !important; /* amber-500 */
+}
+
+/* Added Row - 새로 추가된 행 */
+.tabulator .tabulator-row.row-ad {
+  border-left: 4px solid rgb(34 197 94) !important; /* green-500 */
+}
+
+/* ========================================
+   Responsive Enhancements
+======================================== */
+
+@media (max-width: 768px) {
+  .tabulator {
+    @apply text-xs;
+  }
+  
+  .tabulator .tabulator-cell {
+    @apply px-2 py-1;
+  }
+}
+
+/* ========================================
+   Animation Enhancements
+======================================== */
+
+.tabulator .tabulator-row {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.tabulator .tabulator-cell {
+  @apply transition-colors duration-150;
+}
+
+/* Custom scrollbar for dark mode */
+.tabulator .tabulator-tableHolder::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+.tabulator .tabulator-tableHolder::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+.tabulator .tabulator-tableHolder::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+.tabulator .tabulator-tableHolder::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* ========================================
+   헤더 텍스트 가시성 강화 (추가 보정)
+======================================== */
+
+/* 모든 헤더 요소의 배경색과 텍스트 색상 강제 적용 */
+.tabulator .tabulator-header,
+.tabulator .tabulator-header *,
+.tabulator .tabulator-col,
+.tabulator .tabulator-col *,
+.tabulator .tabulator-col-title,
+.tabulator .tabulator-col-content {
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+/* 다크모드 강화 - 더 구체적인 선택자 */
+.dark .tabulator .tabulator-header,
+.dark .tabulator .tabulator-header *,
+.dark .tabulator .tabulator-col,
+.dark .tabulator .tabulator-col *,
+.dark .tabulator .tabulator-col-title,
+.dark .tabulator .tabulator-col-content {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+/* 헤더 전체 영역 다크모드 강화 */
+.dark .tabulator .tabulator-header {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+  border-bottom-color: rgb(75 85 99) !important; /* gray-600 */
+}
+
+.dark .tabulator .tabulator-col {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+  border-right-color: rgb(75 85 99) !important; /* gray-600 */
+}
