@@ -54,8 +54,6 @@ export class InboundHistoryTable extends CommonTable {
     
     // AJAX 설정 (실제 API 엔드포인트로 변경 필요)
     this.setAjaxUrl('/api/inbound/history');
-    this.setGetMode('getInboundHistoryList');
-    this.setPutMode('saveInboundHistory');
     
     // 필터 셀렉터 설정
     this.setFilterSelector('[data-filter]');

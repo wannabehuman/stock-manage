@@ -1,26 +1,31 @@
 <script>
   import { Card, Breadcrumb, BreadcrumbItem, Button } from 'flowbite-svelte';
   import { HomeSolid, MailBoxSolid, GridSolid } from 'flowbite-svelte-icons';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { ItemsTable } from './itemsTable.js';
-  import { SearchForm, ItemCdInput, ItemNmInput, DateStInput, DateEdInput } from '../../../lib/components/forms';
+  import { SearchForm, ItemCdInput, ItemNmInput, ItemGrpInput } from '../../../lib/components/forms';
+  import { SingleTon } from '../../../lib/components/commonTabulator/singleTon.js';
 
   // 테이블 인스턴스
   let itemsTable;
+  const single = SingleTon.getInstance();
 
   onMount(() => {
     // 입고등록 테이블 초기화
     setTimeout(() => {
       try {
-        console.log('Initializing ItemsTable...');
         itemsTable = new ItemsTable();
-        console.log('Calling init...');
         itemsTable.init();
-        console.log('Table initialization completed');
       } catch (error) {
         console.error('Error initializing table:', error);
       }
     }, 100); // 100ms 지연
+  });
+
+  onDestroy(() => {
+    // 페이지 이동 시 SingleTon 데이터 리셋
+    single.resetData('saveData');
+    single.resetData('activedRow');
   });
 </script>
 
@@ -60,39 +65,37 @@
   columns={4}
   onSearch={() => itemsTable?.search()}
 >
-  <DateStInput 
-    value={ itemsTable?.getSearchData()?.startDate || ''}
-    onInput={(e) => itemsTable?.updateSearchData('startDate', e.target.value)}
+  <ItemGrpInput
+    value={ itemsTable?.getSearchData()?.itemGrpCode || ''}
+    onInput={(e) => itemsTable?.updateSearchData('itemGrpCode', e.target.value)}
+    onSearch={() => itemsTable?.openSearchCategoryModal()}
   />
-  <DateEdInput 
-    value={ itemsTable?.getSearchData()?.endDate || ''}
-    onInput={(e) => itemsTable?.updateSearchData('endDate', e.target.value)}
-  />
-  <ItemCdInput 
+  <ItemCdInput
     value={ itemsTable?.getSearchData()?.itemCode || ''}
     onInput={(e) => itemsTable?.updateSearchData('itemCode', e.target.value)}
+    onSearch={() => itemsTable?.openSearchItemModal()}
   />
-  <ItemNmInput 
+  <ItemNmInput
     value={ itemsTable?.getSearchData()?.itemName || ''}
     onInput={(e) => itemsTable?.updateSearchData('itemName', e.target.value)}
+    onSearch={() => itemsTable?.openSearchItemModal()}
   />
   
   <svelte:fragment slot="buttons">
-    <Button color="blue" on:click={() => itemsTable?.search()}>
+    <Button color="blue" on:click={() => itemsTable?.saveData()}>
       💾
-      검색
+      저장
     </Button>
   </svelte:fragment>
 </SearchForm>
 </div>
 
 <!-- 입고등록 테이블 -->
-<Card class="p-3 w-full max-w-full overflow-hidden flex-1 flex flex-col">
-  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-3 flex-shrink-0">
+<Card padding="none" class="p-3 w-full max-w-full overflow-hidden flex-1 flex flex-col">
+  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mb-3 flex-shrink-0">
     <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">품목관리</h2>
     <!-- 행 추가 버튼 -->
     <Button color="green" class="w-full sm:w-auto flex-shrink-0" on:click={() => {
-      console.log('Add row button clicked, itemsTable:', itemsTable);
       itemsTable?.addRow();
     }}>
       +

@@ -1,26 +1,37 @@
 <script>
   import { Card, Breadcrumb, BreadcrumbItem, Button } from 'flowbite-svelte';
   import { HomeSolid, MailBoxSolid, GridSolid } from 'flowbite-svelte-icons';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { CodesTable } from './codesTable.js';
-  import { SearchForm, ItemCdInput, ItemNmInput, DateStInput, DateEdInput } from '../../../lib/components/forms';
+  import { SingleTon } from '../../../lib/components/commonTabulator/singleTon.js';
+  // import { CodesTable2 } from './codesTable2.js';
 
   // 테이블 인스턴스
   let codesTable;
+  // let codesTable2;
+  const single = SingleTon.getInstance();
 
   onMount(() => {
-    // 입고등록 테이블 초기화
+    // 기초코드 테이블 초기화
     setTimeout(() => {
       try {
         console.log('Initializing CodesTable...');
         codesTable = new CodesTable();
+
         console.log('Calling init...');
         codesTable.init();
+
         console.log('Table initialization completed');
       } catch (error) {
         console.error('Error initializing table:', error);
       }
     }, 100); // 100ms 지연
+  });
+
+  onDestroy(() => {
+    // 페이지 이동 시 SingleTon 데이터 리셋
+    single.resetData('saveData');
+    single.resetData('activedRow');
   });
 </script>
 
@@ -53,52 +64,60 @@
   </Breadcrumb>
 </div>
 
-<!-- 검색 필터 -->
-<div class="flex-shrink-0">
-<SearchForm 
-  title="검색 조건"
-  columns={4}
-  onSearch={() => codesTable?.search()}
->
-  <DateStInput 
-    value={ codesTable?.getSearchData()?.startDate || ''}
-    onInput={(e) => codesTable?.updateSearchData('startDate', e.target.value)}
-  />
-  <DateEdInput 
-    value={ codesTable?.getSearchData()?.endDate || ''}
-    onInput={(e) => codesTable?.updateSearchData('endDate', e.target.value)}
-  />
-  <ItemCdInput 
-    value={ codesTable?.getSearchData()?.itemCode || ''}
-    onInput={(e) => codesTable?.updateSearchData('itemCode', e.target.value)}
-  />
-  <ItemNmInput 
-    value={ codesTable?.getSearchData()?.itemName || ''}
-    onInput={(e) => codesTable?.updateSearchData('itemName', e.target.value)}
-  />
-  
-  <svelte:fragment slot="buttons">
-    <Button color="blue" on:click={() => codesTable?.search()}>
-      💾
-      검색
-    </Button>
-  </svelte:fragment>
-</SearchForm>
+<!-- 상단 버튼 영역 -->
+<div class="flex-shrink-0 mb-4">
+  <div class="flex gap-2 justify-end">
+    <!-- <Button color="blue" on:click={() => {
+      codesTable?.saveData();
+      codesTable?.codesTable2?.saveData();
+    }}>
+      💾 저장
+    </Button> -->
+  </div>
 </div>
 
-<!-- 입고등록 테이블 -->
-<Card class="p-3 w-full max-w-full overflow-hidden flex-1 flex flex-col">
-  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-3 flex-shrink-0">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">기초코드관리</h2>
-    <!-- 행 추가 버튼 -->
-    <Button color="green" class="w-full sm:w-auto flex-shrink-0" on:click={() => {
-      console.log('Add row button clicked, codesTable:', codesTable);
-      codesTable?.addRow();
-    }}>
-      +
-      행 추가
-    </Button>
+<!-- 코드 그룹/상세 테이블 -->
+<Card class="p-3 w-full max-w-full overflow-hidden flex-1 flex flex-col gap-4">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
+    <!-- 대분류 (코드 그룹) -->
+    <div class="flex flex-col min-w-0">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3 flex-shrink-0">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">대분류 (코드그룹)</h2>
+        <Button color="green" class="w-full sm:w-auto flex-shrink-0" on:click={() => {
+          console.log('Add row button clicked, codesTable:', codesTable);
+          codesTable?.addRow();
+        }}>
+          + 행 추가
+        </Button>
+        <Button color="blue" on:click={() => {
+          codesTable?.saveData();
+          // codesTable?.codesTable2?.saveData();
+        }}>
+          💾 저장
+        </Button>
+      </div>
+      <div id="codesTable" class="w-full flex-1 min-h-0 overflow-auto"></div>
+    </div>
+
+    <!-- 소분류 (코드 상세) -->
+    <div class="flex flex-col min-w-0">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3 flex-shrink-0">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">소분류 (코드상세)</h2>
+        <Button color="green" class="w-full sm:w-auto flex-shrink-0" on:click={() => {
+          // console.log('Add row button clicked, codesTable2:', codesTable2);
+          codesTable.addRow2();
+        }}>
+          + 행 추가
+        </Button>
+        <Button color="blue" on:click={() => {
+          // codesTable?.saveData();
+          codesTable?.codesTable2?.saveData();
+        }}>
+          💾 저장
+        </Button>
+      </div>
+      <div id="codesTable2" class="w-full flex-1 min-h-0 overflow-auto"></div>
+    </div>
   </div>
-  <div id="codesTable" class="w-full flex-1 min-h-0 overflow-x-auto"></div>
 </Card>
 </div>

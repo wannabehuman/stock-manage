@@ -15,7 +15,8 @@ export const nodes = [
 	() => import('./nodes/11'),
 	() => import('./nodes/12'),
 	() => import('./nodes/13'),
-	() => import('./nodes/14')
+	() => import('./nodes/14'),
+	() => import('./nodes/15')
 ];
 
 export const server_loads = [];
@@ -23,17 +24,18 @@ export const server_loads = [];
 export const dictionary = {
 		"/": [2],
 		"/inbound/current": [3],
-		"/inbound/history": [4],
-		"/inbound/register": [5],
-		"/login": [6],
-		"/logout": [7],
-		"/master/codes": [8],
-		"/master/items": [9],
-		"/modal-examples": [10],
-		"/outbound/history": [11],
-		"/outbound/register": [12],
-		"/users/account": [13],
-		"/users/management": [14]
+		"/inbound/daily": [4],
+		"/inbound/history": [5],
+		"/inbound/register": [6],
+		"/login": [7],
+		"/logout": [8],
+		"/master/codes": [9],
+		"/master/items": [10],
+		"/modal-examples": [11],
+		"/outbound/history": [12],
+		"/outbound/register": [13],
+		"/users/account": [14],
+		"/users/management": [15]
 	};
 
 export const hooks = {

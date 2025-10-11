@@ -1,6 +1,6 @@
 import { CommonTable } from '../../../lib/components/commonTabulator/commonTable.js';
 
-// 입고등록 테이블 클래스 (CommonTable 상속)
+// 월별 출고 이력 테이블 클래스 (CommonTable 상속)
 export class OutboundHistoryTable extends CommonTable {
   constructor() {
     super();
@@ -52,10 +52,8 @@ export class OutboundHistoryTable extends CommonTable {
     this.setTableName('출고이력조회');
     console.log('Table configuration completed');
     
-    // AJAX 설정 (실제 API 엔드포인트로 변경 필요)
+    // AJAX 설정 (출고 이력 조회)
     this.setAjaxUrl('/api/outbound');
-    this.setGetMode('getOutboundList');
-    this.setPutMode('saveOutbound');
     
     // 필터 셀렉터 설정
     this.setFilterSelector('[data-filter]');

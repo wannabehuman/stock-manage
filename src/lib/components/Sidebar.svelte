@@ -198,14 +198,19 @@
                 <GridSolid class="w-4 h-4 text-green-500" />
               </svelte:fragment>
             </SidebarItem>
-            <SidebarItem label="현재고조회" href="/inbound/current" class="text-sm hover:bg-green-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/inbound/current' ? 'bg-green-50 dark:bg-gray-600' : ''}">
+            <!-- <SidebarItem label="현재고조회" href="/inbound/current" class="text-sm hover:bg-green-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/inbound/current' ? 'bg-green-50 dark:bg-gray-600' : ''}">
               <svelte:fragment slot="icon">
                 <SearchSolid class="w-4 h-4 text-green-500" />
               </svelte:fragment>
-            </SidebarItem>
-            <SidebarItem label="입고이력조회" href="/inbound/history" class="text-sm hover:bg-green-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/inbound/history' ? 'bg-green-50 dark:bg-gray-600' : ''}">
+            </SidebarItem> -->
+            <!-- <SidebarItem label="입고이력조회" href="/inbound/history" class="text-sm hover:bg-green-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/inbound/history' ? 'bg-green-50 dark:bg-gray-600' : ''}">
               <svelte:fragment slot="icon">
                 <ClipboardListSolid class="w-4 h-4 text-green-500" />
+              </svelte:fragment>
+            </SidebarItem> -->
+            <SidebarItem label="일별입고이력" href="/inbound/daily" class="text-sm hover:bg-green-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/inbound/daily' ? 'bg-green-50 dark:bg-gray-600' : ''}">
+              <svelte:fragment slot="icon">
+                <ChartPieSolid class="w-4 h-4 text-green-500" />
               </svelte:fragment>
             </SidebarItem>
           </div>
@@ -232,11 +237,11 @@
               <MailBoxSolid class="w-4 h-4 text-red-500" />
             </svelte:fragment>
           </SidebarItem>
-          <SidebarItem label="출고이력조회" href="/outbound/history" class="text-sm hover:bg-red-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/outbound/history' ? 'bg-red-50 dark:bg-gray-600' : ''}">
+          <!-- <SidebarItem label="출고이력조회" href="/outbound/history" class="text-sm hover:bg-red-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/outbound/history' ? 'bg-red-50 dark:bg-gray-600' : ''}">
             <svelte:fragment slot="icon">
               <ClipboardListSolid class="w-4 h-4 text-red-500" />
             </svelte:fragment>
-          </SidebarItem>
+          </SidebarItem> -->
         </div>
       {/if}
     </div>

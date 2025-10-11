@@ -144,9 +144,10 @@
 /* Cell Styling */
 .tabulator .tabulator-cell {
   @apply border-r border-gray-100 dark:border-gray-700;
-  @apply text-sm;
+  /* @apply text-sm; */
   box-sizing: border-box !important;
-  padding: 8px 12px !important;
+  font-size: 15px !important;
+  /* padding: 8px px !important; */
 }
 
 .tabulator .tabulator-cell:last-child {
@@ -154,7 +155,7 @@
 }
 
 .tabulator .tabulator-cell.tabulator-editing {
-  @apply bg-blue-50 dark:bg-blue-900/20;
+  /* @apply bg-blue-50 dark:bg-blue-900/20; */
   @apply outline outline-2 outline-blue-500 dark:outline-blue-400;
 }
 
@@ -162,14 +163,14 @@
 .tabulator .tabulator-cell input,
 .tabulator .tabulator-cell select,
 .tabulator .tabulator-cell textarea {
-  @apply bg-gray-50 dark:bg-gray-700 !important;
-  @apply border border-gray-300 dark:border-gray-600 !important;
+  /* @apply bg-gray-50 dark:bg-gray-700 !important; */
+  /* @apply border border-gray-300 dark:border-gray-600 !important; */
   @apply text-gray-900 dark:text-gray-100 !important;
-  @apply rounded-lg px-3 py-2 !important;
-  @apply text-sm !important;
-  @apply focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 !important;
-  @apply focus:border-blue-500 dark:focus:border-blue-400 !important;
-  @apply transition-colors duration-150 !important;
+  /* @apply rounded-lg px-3 py-2 !important; */
+  /* @apply text-sm !important; */
+  /* @apply focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 !important; */
+  /* @apply focus:border-blue-500 dark:focus:border-blue-400 !important; */
+  /* @apply transition-colors duration-150 !important; */
 }
 
 /* Footer Styling */

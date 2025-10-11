@@ -141,7 +141,7 @@
 }
 
 .tabulator .tabulator-cell.tabulator-editing {
-  @apply bg-blue-50 dark:bg-blue-900/20;
+  /* @apply bg-blue-50 dark:bg-blue-900/20; */
   @apply outline outline-2 outline-blue-500 dark:outline-blue-400;
 }
 
@@ -150,10 +150,10 @@
 .tabulator .tabulator-cell select,
 .tabulator .tabulator-cell textarea {
   @apply bg-gray-50 dark:bg-gray-700 !important;
-  @apply border border-gray-300 dark:border-gray-600 !important;
+  /* @apply border border-gray-300 dark:border-gray-600 !important; */
   @apply text-gray-900 dark:text-gray-100 !important;
-  @apply rounded-lg px-3 py-2 !important;
-  @apply text-sm !important;
+  /* @apply rounded-lg px-3 py-2 !important; */
+  /* @apply text-sm !important; */
   @apply focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 !important;
   @apply focus:border-blue-500 dark:focus:border-blue-400 !important;
   @apply transition-colors duration-150 !important;
@@ -234,6 +234,20 @@
 /* Error Row */
 .tabulator .tabulator-row.row-er {
   border-left: 4px solid rgb(239 68 68) !important; /* red-500 */
+  background-color: rgb(254 242 242) !important; /* red-50 */
+}
+
+.tabulator .tabulator-row.row-er:hover {
+  background-color: rgb(254 226 226) !important; /* red-100 */
+}
+
+/* Error Row - Dark Mode */
+.dark .tabulator .tabulator-row.row-er {
+  background-color: rgba(127 29 29 / 0.3) !important; /* red-900/30 */
+}
+
+.dark .tabulator .tabulator-row.row-er:hover {
+  background-color: rgba(127 29 29 / 0.5) !important; /* red-900/50 */
 }
 
 /* Updated Row - 수정된 행 */

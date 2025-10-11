@@ -1,12 +1,14 @@
 <script>
   import { Card, Breadcrumb, BreadcrumbItem, Button } from 'flowbite-svelte';
   import { HomeSolid, MailBoxSolid, GridSolid } from 'flowbite-svelte-icons';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { OutboundHistoryTable } from './outboundHistoryTable.js';
   import { SearchForm, ItemCdInput, ItemNmInput, DateStInput, DateEdInput } from '../../../lib/components/forms';
+  import { SingleTon } from '../../../lib/components/commonTabulator/singleTon.js';
 
   // 테이블 인스턴스
   let outboundHistoryTable;
+  const single = SingleTon.getInstance();
 
   onMount(() => {
     // 입고등록 테이블 초기화
@@ -21,6 +23,12 @@
         console.error('Error initializing table:', error);
       }
     }, 100); // 100ms 지연
+  });
+
+  onDestroy(() => {
+    // 페이지 이동 시 SingleTon 데이터 리셋
+    single.resetData('saveData');
+    single.resetData('activedRow');
   });
 </script>
 

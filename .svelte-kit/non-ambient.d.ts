@@ -27,7 +27,7 @@ export {};
 
 declare module "$app/types" {
 	export interface AppTypes {
-		RouteId(): "/" | "/inbound" | "/inbound/current" | "/inbound/history" | "/inbound/register" | "/login" | "/logout" | "/master" | "/master/codes" | "/master/items" | "/modal-examples" | "/outbound" | "/outbound/history" | "/outbound/register" | "/users" | "/users/account" | "/users/management" | "/users/notifications";
+		RouteId(): "/" | "/inbound" | "/inbound/current" | "/inbound/daily" | "/inbound/history" | "/inbound/register" | "/login" | "/logout" | "/master" | "/master/codes" | "/master/items" | "/modal-examples" | "/outbound" | "/outbound/history" | "/outbound/register" | "/users" | "/users/account" | "/users/management" | "/users/notifications";
 		RouteParams(): {
 			
 		};
@@ -35,6 +35,7 @@ declare module "$app/types" {
 			"/": Record<string, never>;
 			"/inbound": Record<string, never>;
 			"/inbound/current": Record<string, never>;
+			"/inbound/daily": Record<string, never>;
 			"/inbound/history": Record<string, never>;
 			"/inbound/register": Record<string, never>;
 			"/login": Record<string, never>;
@@ -51,7 +52,7 @@ declare module "$app/types" {
 			"/users/management": Record<string, never>;
 			"/users/notifications": Record<string, never>
 		};
-		Pathname(): "/" | "/inbound" | "/inbound/" | "/inbound/current" | "/inbound/current/" | "/inbound/history" | "/inbound/history/" | "/inbound/register" | "/inbound/register/" | "/login" | "/login/" | "/logout" | "/logout/" | "/master" | "/master/" | "/master/codes" | "/master/codes/" | "/master/items" | "/master/items/" | "/modal-examples" | "/modal-examples/" | "/outbound" | "/outbound/" | "/outbound/history" | "/outbound/history/" | "/outbound/register" | "/outbound/register/" | "/users" | "/users/" | "/users/account" | "/users/account/" | "/users/management" | "/users/management/" | "/users/notifications" | "/users/notifications/";
+		Pathname(): "/" | "/inbound" | "/inbound/" | "/inbound/current" | "/inbound/current/" | "/inbound/daily" | "/inbound/daily/" | "/inbound/history" | "/inbound/history/" | "/inbound/register" | "/inbound/register/" | "/login" | "/login/" | "/logout" | "/logout/" | "/master" | "/master/" | "/master/codes" | "/master/codes/" | "/master/items" | "/master/items/" | "/modal-examples" | "/modal-examples/" | "/outbound" | "/outbound/" | "/outbound/history" | "/outbound/history/" | "/outbound/register" | "/outbound/register/" | "/users" | "/users/" | "/users/account" | "/users/account/" | "/users/management" | "/users/management/" | "/users/notifications" | "/users/notifications/";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
 		Asset(): string & {};
 	}

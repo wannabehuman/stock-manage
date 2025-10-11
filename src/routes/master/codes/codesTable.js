@@ -1,128 +1,92 @@
 import { CommonTable } from '../../../lib/components/commonTabulator/commonTable.js';
-
-// 기초코드 테이블 클래스 (CommonTable 상속)
+import { CodesTable2 } from './codesTable2.js';
+// 코드 그룹(대분류) 테이블 클래스 (CommonTable 상속)
 export class CodesTable extends CommonTable {
   constructor() {
     super();
-    console.log('CodesTable constructor called');
-    
-    // 검색 필터 데이터
-    this.searchData = {
-      startDate: '',
-      endDate: '',
-      itemCode: '',
-      itemName: ''
-    };
-    
+    // console.log('CodesTable constructor called');
+
     // 테이블 필드 설정
     const tableFields = [
-      { field: "select", title: "선택", width: 60, formatter: "tickCross", editor: true, headerSort: false },
-      { field: "ITEM_CD", title: "품목코드", width: 120, editor: "input", 
+      { field: "grp_code", title: "그룹코드", width: 120, editor: "input",
         validation: [{ type: 'required' }] },
-      { field: "ITEM_NM", title: "품목명", width: 200, editor: "input",
+      { field: "grp_name", title: "그룹명", width: 150, editor: "input",
         validation: [{ type: 'required' }] },
-      { field: "INBOUND_QTY", title: "입고수량", width: 100, editor: "number", hozAlign: "right",
-        validation: [{ type: 'required' }, { type: 'number', params: { min: 1 } }] },
-      { field: "UNIT_PRICE", title: "단가", width: 100, editor: "number", hozAlign: "right",
-        validation: [{ type: 'number', params: { min: 0 } }] },
-      { field: "TOTAL_AMT", title: "총금액", width: 120, hozAlign: "right", 
-        mutator: (value, data) => (data.INBOUND_QTY || 0) * (data.UNIT_PRICE || 0) },
-      { field: "SUPPLIER_CD", title: "공급업체코드", width: 120, editor: "input" },
-      { field: "SUPPLIER_NM", title: "공급업체명", width: 150, editor: "input" },
-      { field: "EXPIRE_DT", title: "유통기한", width: 120, editor: "date" },
-      { field: "LOT_NO", title: "LOT번호", width: 120, editor: "input" },
-      { field: "LOCATION_CD", title: "저장위치", width: 100, editor: "input" },
-      { field: "Del_Check", title: "삭제", frozen: true,    width: 30, 
+      { field: "description", title: "설명", width: 180, editor: "input" },
+      { field: "use_yn", title: "사용", width: 80, editor: "select",
+        editorParams: { values: { 'Y': '사용', 'N': '미사용' } },
         formatter: (cell) => {
-          // return '<i class="fas fa-trash text-red-500 cursor-pointer"></i>';
-        },
-        cellClick: (e, cell) => {
-          const row = cell.getRow();
-          row.delete();
+          const value = cell.getValue();
+          return value === 'Y' ? '사용' : '미사용';
+        }
+      },
+      { field: "sort_order", title: "순서", width: 70, editor: "number", hozAlign: "right" },
+      { field: "Del_Check", title: "삭제", frozen: true, width: 60,
+        formatter: (cell) => {
+          return '🗑️';
         }
       },
     ];
-    
+
     // 테이블 설정
-    console.log('Setting table fields:', tableFields);
+    // console.log('Setting table fields:', tableFields);
     this.setFields(tableFields);
-    console.log('Setting table selector: codesTable');
+    // console.log('Setting table selector: codesTable');
     this.setTbSelectorId('codesTable');
-    this.setUniCD(['CODE_GRP', 'CODE_CD']); // 고유키 설정
-    this.setTableName('기초코드관리');
-    console.log('Table configuration completed');
+    this.setUniCD(['grp_code']); // 고유키 설정
+    this.setTableName('코드그룹');
+    this.setTableBuilt(); // 테이블 생성 시 자동 데이터 로드
+    this.setCtbSetting({
+      selectableRows: 1,
+      selectable: true,
+    })
+    this.codesTable2 = new CodesTable2();
+    this.codesTable2.init();
     
-    // AJAX 설정 (실제 API 엔드포인트로 변경 필요)
-    this.setAjaxUrl('/api/master/codes');
-    this.setGetMode('getCodesList');
-    this.setPutMode('saveCodes');
+    // console.log('Table configuration completed');
+
+    // AJAX 설정
+    this.setAjaxUrl('/api/code-group');
     
     // 필터 셀렉터 설정
     this.setFilterSelector('[data-filter]');
-    
-    // 셀 수정 시 총금액 자동 계산
-    this.setCellEventList('edited', 'INBOUND_QTY', (cell) => {
-      this.calculateTotal(cell.getRow());
-    });
-    
-    this.setCellEventList('edited', 'UNIT_PRICE', (cell) => {
-      this.calculateTotal(cell.getRow());
-    });
+
+    // 소분류 테이블 연결
+    this.setLinkedTables([this.codesTable2]);
   }
-  
-  // 총금액 계산
-  calculateTotal(row) {
-    const data = row.getData();
-    const qty = parseFloat(data.OUTBOUND_QTY) || 0;
-    const price = parseFloat(data.UNIT_PRICE) || 0;
-    const total = qty * price;
-    
-    row.getCell('TOTAL_AMT').setValue(total);
+
+  // 기본 데이터 생성
+  getDefaultRowData() {
+    return {
+      grp_code: '',
+      grp_name: '',
+      description: '',
+      use_yn: 'Y',
+      sort_order: 0
+    };
   }
-  
-  // // 기본 입고 데이터 생성
-  // getDefaultRowData() {
-  //   return {
-  //     ITEM_CD: '',
-  //     ITEM_NM: '',
-  //      OUTBOUND_QTY: 1,
-  //     UNIT_PRICE: 0,
-  //     TOTAL_AMT: 0,
-  //     SUPPLIER_CD: '',
-  //     SUPPLIER_NM: '',
-  //     EXPIRE_DT: '',
-  //     LOT_NO: '',
-  //     LOCATION_CD: 'A-01',
-  //     REMARK: '',
-  //     INBOUND_DT: new Date().toISOString().split('T')[0] // 오늘 날짜
-  //   };
-  // }
-  
+
   // 행 추가
   addRow() {
-    console.log('CodesTable addRow called');
-    // const defaultData = this.getDefaultRowData();
-    super.addRow();
-    console.log('CodesTable addRow completed');
+    // console.log('CodesTable addRow called');
+    const defaultData = this.getDefaultRowData();
+    super.addRow(defaultData);
+    // console.log('CodesTable addRow completed');
   }
-  
+  addRow2() {
+    // console.log('CodesTable addRow called');
+    // const defaultData = this.getDefaultRowData();
+
+    this.codesTable2.addRow();
+    // console.log('CodesTable addRow completed');
+  }
   // 데이터 저장
   saveData() {
     this.putData();
   }
-  
-  // 검색 데이터 업데이트
-  updateSearchData(field, value) {
-    this.searchData[field] = value;
-  }
-  
-  // 검색 데이터 가져오기
-  getSearchData() {
-    return this.searchData;
-  }
-  
+
   // 검색 실행
   search() {
-    // this.getMainList();
+    this.getMainList();
   }
 }

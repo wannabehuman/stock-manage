@@ -118,7 +118,7 @@
 
 /* Content Areas */
 .content-area {
-  @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700;
+  @apply bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700;
 }
 
 .content-area-transparent {
@@ -147,7 +147,7 @@
 }
 
 .main-content {
-  @apply flex-1 p-6 overflow-auto;
+  @apply flex-1 p-4 overflow-auto;
 }
 
 /* Modal/Dialog Layouts */

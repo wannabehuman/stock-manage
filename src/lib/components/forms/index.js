@@ -10,3 +10,4 @@ export { default as ItemCdInput } from './ItemCdInput.svelte';
 export { default as ItemNmInput } from './ItemNmInput.svelte';
 export { default as DateStInput } from './DateStInput.svelte';
 export { default as DateEdInput } from './DateEdInput.svelte';
+export { default as ItemGrpInput } from './ItemGrpInput.svelte';

@@ -11,13 +11,13 @@
   export let showButtons = true; // 버튼 표시 여부
 </script>
 
-<Card class="mb-4 p-4 w-full max-w-none">
-  <div class="flex justify-between items-end gap-6">
+<Card padding="none" class="mb-4 p-3 w-full max-w-none">
+  <div class="flex justify-between items-end gap-4">
     <!-- 검색 조건 입력들 -->
-    <div class="flex gap-4 flex-wrap items-end">
+    <div class="flex gap-3 flex-wrap items-end">
       <slot />
     </div>
-    
+
     <!-- 버튼들 -->
     {#if showButtons}
       <div class="flex gap-2 flex-shrink-0">

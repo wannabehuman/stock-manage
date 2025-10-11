@@ -386,13 +386,13 @@ export class CommonTable{
 
     const tableSetting = {
       layout: "fitColumns",
-      height: 400,
+      height: "100%",
       placeholder: "등록된 내용이 존재하지 않습니다.",
       columns: this._fields,
       movableColumns: true,
-      selectableRows: 1,
-      selectable: true,
-      
+      // selectableRows: 1,
+      // selectable: true,
+
       // 반응형 설정
       responsiveLayout: "hide",
       responsiveLayoutCollapseStartOpen: false,
@@ -409,7 +409,7 @@ export class CommonTable{
         // 툴팁 설정
         tooltip: function(e, cell, onRendered) {
           const data = cell.getRow().getData();
-          if (data.RS_CODE === "E") {
+          if (data.RS_CODE === false) {
             return `오류: ${data.RS_MSG || '알 수 없는 오류'}`;
           }
           // 셀 내용이 길 경우 툴팁으로 전체 내용 표시
@@ -421,12 +421,12 @@ export class CommonTable{
         },
       },
 
-      // 페이지네이션 설정
-      pagination: true,
-      paginationMode: "local",
-      paginationSize: 50,
-      paginationSizeSelector: [25, 50, 100, 200],
-      paginationCounter: "rows",
+      // 페이지네이션 설정 - 비활성화 (footer 숨김)
+      pagination: false,
+      // paginationMode: "local",
+      // paginationSize: 50,
+      // paginationSizeSelector: [25, 50, 100, 200],
+      // paginationCounter: "rows",
       
       // 정렬 아이콘 개선
       headerSortElement: `
@@ -435,30 +435,40 @@ export class CommonTable{
           <div class="w-0 h-0 border-l-[3px] border-r-[3px] border-t-[4px] border-transparent border-t-gray-400 dark:border-t-gray-500"></div>
         </div>
       `,
-      rowFormatter: function (row) { 
+      rowFormatter: function (row) {
 
         // 행 값에 따른 row 클래스 추가
         console.log('Row formatter called for:', row._row.data);
-        row.getElement().classList.remove("row-dl");
-        row.getElement().classList.remove("row-er");
-        row.getElement().classList.remove("row-ud");
-        row.getElement().classList.remove("row-ad");
-        
+        const element = row.getElement();
+
+        element.classList.remove("row-dl");
+        element.classList.remove("row-er");
+        element.classList.remove("row-ud");
+        element.classList.remove("row-ad");
+
+        // 기본 스타일 초기화
+        element.style.backgroundColor = '';
+
         if( row._row.data.ROW_STATUS === "D" ){
           console.log('Adding row-dl class');
-          row.getElement().classList.add("row-dl");
+          element.classList.add("row-dl");
         }
         if( row._row.data.ROW_STATUS === 'U'){
           console.log('Adding row-ud class');
-          row.getElement().classList.add('row-ud')
+          element.classList.add('row-ud')
         }
         if( row._row.data.ROW_STATUS === 'I'){
           console.log('Adding row-ad class');
-          row.getElement().classList.add('row-ad');
+          element.classList.add('row-ad');
         }
-        if( row._row.data.RS_CODE === 'E'){
+        if( row._row.data.RS_CODE === false){
           console.log('Adding row-er class');
-          row.getElement().classList.add('row-er');
+          element.classList.add('row-er');
+          // 직접 인라인 스타일 적용 (다크모드 확인)
+          const isDarkMode = document.documentElement.classList.contains('dark');
+          element.style.backgroundColor = isDarkMode
+            ? 'rgba(127, 29, 29, 0.3)'  // dark: red-900/30
+            : 'rgb(254, 242, 242)';      // light: red-50
         }
       },
       ...this._cTbSetting,
@@ -828,15 +838,18 @@ export class CommonTable{
 
     // DEL_CHECK 삭제버튼]
     this.setCellEventList('click', 'Del_Check', (e,cell)=>{
+      console.log(cell);
       if(cell.getRow().getData().ROW_STATUS === 'I'){
+        console.log('삭제 버튼 클릭');
         // 저장 데이터에서 해당 행 제거
         const mainTable = this._single.findMainTable(this._tableSelector);
         this._single.delTableData(this._tableSelector, cell.getRow().getData().unicId, mainTable);
         cell.getRow().delete();
         return;
       }
-
-      cell.setValue(cell.getValue() === 'Y' ? 'N' : 'Y');
+      const currentValue = cell.getValue() || 'N';
+      console.log(cell.getValue());
+      cell.setValue(currentValue === 'Y' ? 'N' : 'Y');
     });
 
   }
@@ -870,8 +883,9 @@ export class CommonTable{
   addRow(data={}, err = ()=>{}){
     if(this.loading){ return;}
     const mainTable = this._single.findMainTable(this._tableSelector);
+    // console.log(mainTable);
     let addRowObj = {...data, ROW_STATUS : 'I', unicId :uniqid(), RS_CODE: undefined, RS_MSG: undefined};
-    console.log('Adding row with data:', addRowObj);
+    // console.log('Adding row with data:', addRowObj);
     // 메인테이블이 아닐때
     if(mainTable !== true){
       const mainActiveRow = this._single.getData('activedRow', mainTable._tableSelector)
@@ -893,6 +907,7 @@ export class CommonTable{
 
       // 선택된 행의 정보도 같이 넣어준다.
       addRowObj = {...mainCDdata, ...addRowObj };
+      console.log('Adding row with data:', addRowObj);
     };
     
     
@@ -965,8 +980,8 @@ export class CommonTable{
       else if(!row.getData().ROW_STATUS){
         row.update( { ROW_STATUS :'U' } )
       }
-      else if(row.getData().ROW_STATUS === 'I' && row.getData().RS_CODE === 'E'){
-        // this._single.updateSveData(this._tableSelector, rowData.unicId, updatedData);
+      else if(row.getData().ROW_STATUS === 'I' && row.getData().RS_CODE === false){
+        this._single.updateSveData(this._tableSelector, rowData.unicId, updatedData);
       }
       //셀 수정 시 해당 행의 데이터 업데이트
       // this._single.updateSveData(this._tableSelector, rowData.unicId, updatedData);
@@ -1108,17 +1123,36 @@ export class CommonTable{
       this.loading = true; 
     }, 500);
 
+    let response;
     try {
-      const response = await axios.post(this._ajaxUrl, {
-        mode: this._getMode,
-        ...filterData,
-        ...selectFilter, // 통으로 넘겨도 되지만 코드만 넘기는걸 추천
-      });
+      // URL 구성
+      let requestUrl = this._ajaxUrl;
 
-      this.breakPoint = false;  
+      // 메인 테이블인 경우
+      if(mainTable === true){
+        // getMode가 있으면 URL에 추가
+        if(this._getMode && this._getMode.trim() !== ''){
+          requestUrl += `/${this._getMode}`;
+        }
+        response = await axios.get(requestUrl, {
+          params: filterData  // axios params 사용
+        });
+      }
+      // 서브 테이블인 경우
+      else{
+        // getMode가 있으면 선택된 메인 행의 해당 필드값을 URL에 추가
+        if(this._getMode && this._getMode.trim() !== '' && selectFilter[this._getMode]){
+          requestUrl += `/${selectFilter[this._getMode]}`;
+        }
+        response = await axios.get(requestUrl, {
+          params: filterData  // axios params 사용
+        });
+      }
+
+      this.breakPoint = false;
       // 데이터 합치기
       // UDATE할 행 제거 : res.data에서 this.CDs에 속한 고유키의 값이 tbData에 값과 같은 게 있다면 제외할것
-      let originData = response.data.data || [];
+      let originData = response.data || [];
       
       if(!tbData){return this.getSuccess(originData);}
 
@@ -1142,7 +1176,7 @@ export class CommonTable{
     } catch (error) {
       this.breakPoint = false;  
       const errorMessage = error.response?.data?.mesg || error.message || '데이터 조회 중 오류가 발생했습니다.';
-      kuls_alert(errorMessage);
+      // kuls_alert(errorMessage);
     } finally {
       this.breakPoint = false;
       window.clearTimeout(talert);
@@ -1188,29 +1222,25 @@ export class CommonTable{
     }
     try {
       const response = await axios.post(this._ajaxUrl, {
-        mode: this._putMode,
+        // mode: this._putMode,
         ...tbData
       });
-
-      if(response.data.code){
+      if(response.data.every(d=>d.code === true)){
         this.breakPoint = false;  
-        // this._single.resetData('saveData');
+        this._single.resetData('saveData');
         this.putSuccess();
-        kuls_success('저장되었습니다.')
+        // kuls_success('저장되었습니다.')
       } else {
         this.breakPoint = false;
-        try{
-          this.putError(response.data);
-          kuls_alert(response.data.mesg);
-        } catch(e) {
-          kuls_alert("오류메시지를 확인해주세요(예외)");
-          console.error(e);
-        }
+        this.putError(response.data);
+        kuls_alert(response.data[0].message);
+        
       }
     } catch (error) {
       this.breakPoint = false;
-      const errorMessage = error.response?.data?.mesg || error.message || '저장 중 오류가 발생했습니다.';
-      kuls_alert(errorMessage);
+      const errorMessage = error.response?.data?.message || error.message || '저장 중 오류가 발생했습니다.';
+      console.log(errorMessage)
+      // kuls_alert(errorMessage);
     }
 
   }
@@ -1277,15 +1307,18 @@ export class CommonTable{
       // 에러가 있는 행 업데이트
       // if (!res.data || !Array.isArray(res.data)) { return false; }
 
+      // console.log(res)
 
       for(let row of rows){
         const rowData = row.getData();
-        const errData = res.data.find(item => item.unicId === rowData.unicId);
+        // console.log(res);
+        const errData = res.find(item => item.data.unicId === rowData.unicId);
         if(errData){
           row.update({
-            RS_CODE: errData.RS_CODE,
-            RS_MSG: errData.RS_MSG
+            RS_CODE: errData.code,
+            RS_MSG: errData.message
           })
+          console.log(row);
         }else{
           row.update({
             RS_CODE: "",
@@ -1301,16 +1334,16 @@ export class CommonTable{
   }
   updateError(errorData) {
     const mainTable = this._single.findMainTable(this._tableSelector);
-
     const rows = this._tblList.getRows();
+    
     for (let row of rows) {
       const rowData = row.getData();
       const errData = errorData.data.find(item => item.unicId === rowData.unicId);
 
       if (errData) {
         row.update({
-          RS_CODE: errData.RS_CODE,
-          RS_MSG: errData.RS_MSG
+          RS_CODE: errData.code,
+          RS_MSG: errData.message
         });
       }else if(row.getData()['RS_CODE']) {
         row.update({
@@ -1327,9 +1360,7 @@ export class CommonTable{
         }
       })
     }
-
   }
-
 
   // cell click -> 공통 팝업 열기
   // Tb_MC2200.tbPop(itPopView,   'ITEM_CD',     {'ITEM_CD':'ITEM_CD', 'ITEM_NM':'ITEM_NM'} );
