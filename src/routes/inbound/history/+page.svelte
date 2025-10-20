@@ -3,7 +3,7 @@
   import { HomeSolid, MailBoxSolid, GridSolid } from 'flowbite-svelte-icons';
   import { onMount, onDestroy } from 'svelte';
   import { InboundHistoryTable } from './inboundHistoryTable.js';
-  import { SearchForm, ItemCdInput, ItemNmInput, DateStInput, DateEdInput } from '../../../lib/components/forms';
+  import { SearchForm, ItemCdInput, ItemNmInput, MonthInput } from '../../../lib/components/forms';
   import { SingleTon } from '../../../lib/components/commonTabulator/singleTon.js';
 
   // 테이블 인스턴스
@@ -11,7 +11,7 @@
   const single = SingleTon.getInstance();
 
   onMount(() => {
-    // 입고등록 테이블 초기화
+    // 입고이력 테이블 초기화
     setTimeout(() => {
       try {
         console.log('Initializing InboundHistoryTable...');
@@ -34,6 +34,12 @@
 
 <svelte:head>
   <title>입고이력조회 - 재고관리시스템</title>
+  <style>
+    .tabulator-row .tabulator-cell {
+      border-right: 1px solid #ccc;
+      border-bottom: 1px solid #ccc;
+    }
+  </style>
 </svelte:head>
 
 <div class="h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
@@ -63,42 +69,41 @@
 
 <!-- 검색 필터 -->
 <div class="flex-shrink-0">
-<SearchForm 
+<SearchForm
   title="검색 조건"
-  columns={4}
+  columns={3}
   onSearch={() => inboundHistoryTable?.search()}
 >
-  <DateStInput 
-    value={ inboundHistoryTable?.getSearchData()?.startDate || ''}
-    onInput={(e) => inboundHistoryTable?.updateSearchData('startDate', e.target.value)}
+  <MonthInput
+    label="조회년월"
+    value={inboundHistoryTable?.getSearchData()?.month || ''}
+    onInput={(e) => inboundHistoryTable?.updateSearchData('month', e.target.value)}
   />
-  <DateEdInput 
-    value={ inboundHistoryTable?.getSearchData()?.endDate || ''}
-    onInput={(e) => inboundHistoryTable?.updateSearchData('endDate', e.target.value)}
-  />
-  <ItemCdInput 
-    value={ inboundHistoryTable?.getSearchData()?.itemCode || ''}
+  <ItemCdInput
+    value={inboundHistoryTable?.getSearchData()?.itemCode || ''}
     onInput={(e) => inboundHistoryTable?.updateSearchData('itemCode', e.target.value)}
   />
-  <ItemNmInput 
-    value={ inboundHistoryTable?.getSearchData()?.itemName || ''}
+  <ItemNmInput
+    value={inboundHistoryTable?.getSearchData()?.itemName || ''}
     onInput={(e) => inboundHistoryTable?.updateSearchData('itemName', e.target.value)}
   />
-  
+
   <svelte:fragment slot="buttons">
     <Button color="blue" on:click={() => inboundHistoryTable?.search()}>
-      💾
-      검색
+      🔍
+      조회
     </Button>
   </svelte:fragment>
 </SearchForm>
 </div>
 
 <!-- 입고등록 테이블 -->
-<Card class="p-3 w-full max-w-full overflow-hidden flex-1 flex flex-col">
+<Card class="p-3 w-full max-w-full flex-1 flex flex-col">
   <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-3 flex-shrink-0">
     <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">입고이력조회</h2>
   </div>
-  <div id="inboundHistoryTable" class="w-full flex-1 min-h-0 overflow-x-auto"></div>
+  <div class="my-tabulator" style="height: 100%;">
+    <div id="inboundHistoryTable" class="w-full flex-1 min-h-0"></div>
+  </div>
 </Card>
 </div>

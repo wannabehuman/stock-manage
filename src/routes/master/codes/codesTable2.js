@@ -4,7 +4,7 @@ import { CommonTable } from '../../../lib/components/commonTabulator/commonTable
 export class CodesTable2 extends CommonTable {
   constructor() {
     super();
-    // console.log('CodesTable2 constructor called');
+    console.log('CodesTable2 constructor called');
 
     // 테이블 필드 설정
     const tableFields = [
@@ -36,15 +36,20 @@ export class CodesTable2 extends CommonTable {
     this.setFields(tableFields);
     console.log('Setting table selector: codesTable2');
     this.setTbSelectorId('codesTable2');
-    this.setUniCD(['code']); // 복합키 설정
+    this.setUniCD(['grp_code', 'code']); // 복합키 설정 - grp_code + code
     this.setTableName('코드상세');
     console.log('Table configuration completed');
 
     // AJAX 설정
     this.setAjaxUrl('/api/code-detail');
 
+    // getMode 설정 - 대분류 grp_code를 URL에 추가하여 GET /api/code-detail/:grp_code 호출
+    this.setGetMode('grp_code');
+
     // 필터 셀렉터 설정
     this.setFilterSelector('[data-filter]');
+
+    console.log('CodesTable2 configuration complete - will call GET /api/code-detail/:grp_code when row selected');
   }
 
 

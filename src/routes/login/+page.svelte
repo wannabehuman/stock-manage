@@ -37,7 +37,7 @@
     // 유효성 검사 초기화
     errorMessage = '';
     validationErrors = {};
-    
+
     // 기본 유효성 검사
     if (!loginData.username) {
       validationErrors.username = '사용자명을 입력해주세요.';
@@ -53,47 +53,45 @@
     loading = true;
 
     try {
-      // 실제 API 호출 대신 시뮬레이션
-      await simulateLogin(loginData.username, loginData.password);
-      
-      // 로그인 성공 시 세션 저장 (실제로는 JWT 토큰 등 사용)
-      localStorage.setItem('user', JSON.stringify({
-        username: loginData.username,
-        role: loginData.username === 'admin' ? 'admin' : 'user',
-        loginTime: new Date().toISOString()
-      }));
+      // 백엔드 로그인 API 호출
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: loginData.username,
+          password: loginData.password
+        })
+      });
 
-      if (loginData.rememberMe) {
-        localStorage.setItem('rememberUser', loginData.username);
+      const result = await response.json();
+
+      if (result.success) {
+        // JWT 토큰과 사용자 정보 저장
+        localStorage.setItem('accessToken', result.accessToken);
+        localStorage.setItem('user', JSON.stringify(result.user));
+
+        if (loginData.rememberMe) {
+          localStorage.setItem('rememberUser', loginData.username);
+        } else {
+          localStorage.removeItem('rememberUser');
+        }
+
+        // 대시보드로 이동
+        goto('/');
       } else {
-        localStorage.removeItem('rememberUser');
+        errorMessage = result.message || '로그인에 실패했습니다.';
       }
 
-      // 대시보드로 이동
-      goto('/');
-      
     } catch (error) {
-      errorMessage = error.message;
+      errorMessage = '로그인 처리 중 오류가 발생했습니다.';
+      console.error('Login error:', error);
     } finally {
       loading = false;
     }
   }
 
-  // 로그인 시뮬레이션 함수
-  async function simulateLogin(username, password) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        // 간단한 로그인 검증 (실제로는 서버 API 호출)
-        if (username === 'admin' && password === 'admin123') {
-          resolve({ success: true, role: 'admin' });
-        } else if (username === 'user' && password === 'user123') {
-          resolve({ success: true, role: 'user' });
-        } else {
-          reject(new Error('사용자명 또는 비밀번호가 올바르지 않습니다.'));
-        }
-      }, 1000);
-    });
-  }
 
   // 비밀번호 표시/숨김 토글
   function togglePasswordVisibility() {
@@ -150,37 +148,39 @@
     signupLoading = true;
 
     try {
-      // 회원가입 시뮬레이션
-      await simulateSignup(signupData);
+      // 백엔드 회원가입 API 호출
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: signupData.userId,
+          name: signupData.username,
+          email: signupData.email,
+          password: signupData.password
+        })
+      });
 
-      // 성공 시 자동 로그인
-      loginData.username = signupData.userId;
-      loginData.password = signupData.password;
+      const result = await response.json();
 
-      signupModal = false;
-      await handleLogin();
+      if (response.ok) {
+        // 회원가입 성공 - 승인 대기 메시지 표시
+        signupModal = false;
+        errorMessage = '';
+        alert(result.message || '회원가입이 완료되었습니다. 관리자 승인을 기다려주세요.');
+      } else {
+        signupErrorMessage = result.message || '회원가입에 실패했습니다.';
+      }
 
     } catch (error) {
-      signupErrorMessage = error.message;
+      signupErrorMessage = '회원가입 처리 중 오류가 발생했습니다.';
+      console.error('Signup error:', error);
     } finally {
       signupLoading = false;
     }
   }
 
-  // 회원가입 시뮬레이션
-  async function simulateSignup(data) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        // 중복 체크 (실제로는 서버에서 처리)
-        const existingUsers = ['admin', 'user'];
-        if (existingUsers.includes(data.userId)) {
-          reject(new Error('이미 존재하는 아이디입니다.'));
-        } else {
-          resolve({ success: true });
-        }
-      }, 1000);
-    });
-  }
 
   // 회원가입 비밀번호 토글
   function toggleSignupPassword() {
@@ -202,23 +202,25 @@
 </script>
 
 <svelte:head>
-  <title>로그인 - 재고관리시스템</title>
+  <title>로그인 - Sootock</title>
 </svelte:head>
 
 <!-- 로그인 페이지 전용 레이아웃 -->
 <div class="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-  <div class="w-full max-w-sm">
+  <div class="w-full mx-auto" style="max-width: 24rem;">
     <!-- 로고/제목 영역 -->
     <div class="text-center mb-8">
-      <div class="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-        <span class="text-2xl text-white font-bold">📦</span>
+      <div class="mx-auto w-24 h-24 rounded-xl flex items-center justify-center mb-4 shadow-lg">
+        <!-- <span class="text-2xl text-white font-bold">📦</span> -->
+
+        <img src="/images/boyack.png" alt="Logo" class="w-24 h-24">
       </div>
-      <h1 class="text-3xl font-bold text-white mb-2">재고관리시스템</h1>
+      <h1 class="text-3xl font-bold text-white mb-2">수톡</h1>
       <p class="text-gray-400">계정에 로그인하여 시스템을 이용하세요</p>
     </div>
 
     <!-- 로그인 카드 -->
-    <Card class="shadow-2xl border-0 bg-gray-800 border-gray-700">
+    <Card class="shadow-2xl border-0 bg-gray-800 border-gray-700 w-full">
       <form on:submit|preventDefault={handleLogin} class="space-y-6">
           <!-- 에러 메시지 -->
           {#if errorMessage}
@@ -315,24 +317,6 @@
           </Button>
         </form>
 
-        <!-- 추가 정보 -->
-        <div class="mt-6 pt-6 border-t border-gray-600">
-          <div class="bg-gray-700 p-4 rounded-lg">
-            <h3 class="text-sm font-medium text-blue-300 mb-3">
-              테스트 계정
-            </h3>
-            <div class="space-y-2 text-sm">
-              <div class="flex justify-between items-center">
-                <span class="text-gray-300">관리자:</span>
-                <span class="font-mono text-blue-400 bg-gray-600 px-2 py-1 rounded text-xs">admin / admin123</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-gray-300">일반사용자:</span>
-                <span class="font-mono text-green-400 bg-gray-600 px-2 py-1 rounded text-xs">user / user123</span>
-              </div>
-            </div>
-          </div>
-        </div>
     </Card>
 
     <!-- 회원가입 링크 -->

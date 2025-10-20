@@ -16,7 +16,7 @@ export class OutboundRegisterTable extends CommonTable {
     
     // 테이블 필드 설정
     const tableFields = [
-      { field: "select", title: "선택", width: 60, formatter: "tickCross", editor: true, headerSort: false },
+      // { field: "select", title: "선택", width: 60, formatter: "tickCross", editor: true, headerSort: false },
       { field: "inbound_no", title: "입고번호", width: 120, editor: false },
       { field: "stock_code", title: "품목코드", width: 120,
         validation: [{ type: 'required' }],
@@ -58,10 +58,17 @@ export class OutboundRegisterTable extends CommonTable {
         }
       },
       { field: "quantity", title: "수량", width: 100, editor: "number", hozAlign: "right",
-        validation: [{ type: 'required' }, { type: 'number', params: { min: 0 } }] },
+        editorParams: { min: 0, step: 1, selectContents: true },
+        validator: ["required", "integer", "min:0"],
+        formatter: (cell) => {
+          const value = cell.getValue();
+          if (value === null || value === undefined || value === '') return '';
+          return Math.floor(Number(value)).toLocaleString();
+        }
+      },
       { field: "unit", title: "단위", width: 80, editor: "input" },
       { field: "remark", title: "비고", width: 200, editor: "input" },
-      { field: "Del_Check", title: "삭제", frozen: true, width: 30,
+      { field: "Del_Check", title: "삭제", frozen: true, width: 70,
         formatter: (cell) => {
           return '🗑️';
         }
@@ -75,6 +82,14 @@ export class OutboundRegisterTable extends CommonTable {
     this.setTbSelectorId('outboundTable');
     this.setUniCD(['id']); // 고유키 설정
     this.setTableName('출고등록');
+
+    // 품명 기준 정렬 설정
+    this.setCtbSetting({
+      initialSort: [
+        { column: "stock_name", dir: "asc" }
+      ]
+    });
+
     this.setTableBuilt(); // 테이블 생성 시 자동 데이터 로드
     console.log('Table configuration completed');
 
@@ -147,6 +162,14 @@ export class OutboundRegisterTable extends CommonTable {
                   </svg>
                 </button>
               </div>
+              <div class="mb-4">
+                <input
+                  type="text"
+                  id="searchItemNameFilter"
+                  placeholder="품명으로 검색..."
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
               <div id="searchItemTableContainer" style="height: 400px; overflow: auto;">
                 <div class="text-center py-4">
                   <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
@@ -185,65 +208,94 @@ export class OutboundRegisterTable extends CommonTable {
         body: JSON.stringify({})
       });
 
-      const items = await response.json();
+      let items = await response.json();
 
-      // 테이블 HTML 생성
-      let tableHTML = `
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
-            <tr>
-              <th class="px-4 py-3">품목코드</th>
-              <th class="px-4 py-3">품목명</th>
-              <th class="px-4 py-3">카테고리</th>
-              <th class="px-4 py-3">단위</th>
-              <th class="px-4 py-3">선택</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
+      // 품명 기준 가나다순 정렬
+      items.sort((a, b) => {
+        const nameA = a.name || '';
+        const nameB = b.name || '';
+        return nameA.localeCompare(nameB, 'ko-KR');
+      });
 
-      items.forEach(item => {
-        tableHTML += `
-          <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-            <td class="px-4 py-3">${item.code || ''}</td>
-            <td class="px-4 py-3">${item.name || ''}</td>
-            <td class="px-4 py-3">${item.category || ''}</td>
-            <td class="px-4 py-3">${item.unit || ''}</td>
-            <td class="px-4 py-3">
-              <button class="select-search-item px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                      data-code="${item.code}"
-                      data-name="${item.name}">
-                선택
-              </button>
-            </td>
-          </tr>
+      // 테이블 렌더링 함수
+      const renderTable = (filteredItems) => {
+        let tableHTML = `
+          <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
+              <tr>
+                <th class="px-4 py-3">품목코드</th>
+                <th class="px-4 py-3">품목명</th>
+                <th class="px-4 py-3">카테고리</th>
+                <th class="px-4 py-3">단위</th>
+                <th class="px-4 py-3">선택</th>
+              </tr>
+            </thead>
+            <tbody>
         `;
-      });
 
-      tableHTML += '</tbody></table>';
-
-      // 테이블 표시
-      document.getElementById('searchItemTableContainer').innerHTML = tableHTML;
-
-      // 선택 버튼 이벤트
-      document.querySelectorAll('.select-search-item').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const code = e.target.dataset.code;
-          const name = e.target.dataset.name;
-
-          // 검색 데이터에 설정
-          this.updateSearchData('itemCode', code);
-          this.updateSearchData('itemName', name);
-
-          // 입력 필드에 값 표시
-          const itemCodeInput = document.querySelector('[data-name="ITEM_CD"]');
-          const itemNameInput = document.querySelector('[data-name="ITEM_NM"]');
-          if (itemCodeInput) itemCodeInput.value = code;
-          if (itemNameInput) itemNameInput.value = name;
-
-          closeModal();
+        filteredItems.forEach(item => {
+          tableHTML += `
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+              <td class="px-4 py-3">${item.code || ''}</td>
+              <td class="px-4 py-3">${item.name || ''}</td>
+              <td class="px-4 py-3">${item.category || ''}</td>
+              <td class="px-4 py-3">${item.unit || ''}</td>
+              <td class="px-4 py-3">
+                <button class="select-search-item px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                        data-code="${item.code}"
+                        data-name="${item.name}">
+                  선택
+                </button>
+              </td>
+            </tr>
+          `;
         });
+
+        tableHTML += '</tbody></table>';
+        return tableHTML;
+      };
+
+      // 초기 테이블 표시
+      document.getElementById('searchItemTableContainer').innerHTML = renderTable(items);
+
+      // 필터 이벤트 등록
+      const filterInput = document.getElementById('searchItemNameFilter');
+      filterInput.addEventListener('input', (e) => {
+        const filterText = e.target.value.toLowerCase();
+        const filteredItems = items.filter(item => {
+          const itemName = (item.name || '').toLowerCase();
+          return itemName.includes(filterText);
+        });
+        document.getElementById('searchItemTableContainer').innerHTML = renderTable(filteredItems);
+
+        // 필터링 후 선택 버튼 이벤트 재등록
+        attachSelectButtons();
       });
+
+      // 선택 버튼 이벤트 등록 함수
+      const attachSelectButtons = () => {
+        document.querySelectorAll('.select-search-item').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const code = e.target.dataset.code;
+            const name = e.target.dataset.name;
+
+            // 검색 데이터에 설정
+            this.updateSearchData('itemCode', code);
+            this.updateSearchData('itemName', name);
+
+            // 입력 필드에 값 표시
+            const itemCodeInput = document.querySelector('[data-name="ITEM_CD"]');
+            const itemNameInput = document.querySelector('[data-name="ITEM_NM"]');
+            if (itemCodeInput) itemCodeInput.value = code;
+            if (itemNameInput) itemNameInput.value = name;
+
+            closeModal();
+          });
+        });
+      };
+
+      // 초기 선택 버튼 이벤트 등록
+      attachSelectButtons();
 
     } catch (error) {
       console.error('품목 목록 조회 실패:', error);
@@ -275,6 +327,14 @@ export class OutboundRegisterTable extends CommonTable {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                   </svg>
                 </button>
+              </div>
+              <div class="mb-4">
+                <input
+                  type="text"
+                  id="itemNameFilter"
+                  placeholder="품명으로 검색..."
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
               <div id="itemTableContainer" style="height: 400px; overflow: auto;">
                 <div class="text-center py-4">
@@ -314,108 +374,137 @@ export class OutboundRegisterTable extends CommonTable {
         body: JSON.stringify({})
       });
 
-      const items = await response.json();
+      let items = await response.json();
 
       // 재고가 있는 것만 필터링
-      const availableItems = items.filter(item => item.quantity > 0);
+      let availableItems = items.filter(item => item.quantity > 0);
 
-      // 테이블 HTML 생성
-      let tableHTML = `
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
-            <tr>
-              <th class="px-4 py-3">입고번호</th>
-              <th class="px-4 py-3">품목코드</th>
-              <th class="px-4 py-3">품목명</th>
-              <th class="px-4 py-3">입고일자</th>
-              <th class="px-4 py-3">조제일자</th>
-              <th class="px-4 py-3">재고수량</th>
-              <th class="px-4 py-3">단위</th>
-              <th class="px-4 py-3">선택</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
+      // 품명 기준 가나다순 정렬
+      availableItems.sort((a, b) => {
+        const nameA = a.stock_name || '';
+        const nameB = b.stock_name || '';
+        return nameA.localeCompare(nameB, 'ko-KR');
+      });
 
-      if (availableItems.length === 0) {
-        tableHTML += `
-          <tr>
-            <td colspan="8" class="px-4 py-8 text-center text-gray-500">
-              출고 가능한 재고가 없습니다.
-            </td>
-          </tr>
+      // 테이블 렌더링 함수
+      const renderTable = (filteredItems) => {
+        let tableHTML = `
+          <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
+              <tr>
+                <th class="px-4 py-3">입고번호</th>
+                <th class="px-4 py-3">품목코드</th>
+                <th class="px-4 py-3">품목명</th>
+                <th class="px-4 py-3">입고일자</th>
+                <th class="px-4 py-3">조제일자</th>
+                <th class="px-4 py-3">재고수량</th>
+                <th class="px-4 py-3">단위</th>
+                <th class="px-4 py-3">선택</th>
+              </tr>
+            </thead>
+            <tbody>
         `;
-      } else {
-        availableItems.forEach(item => {
-          const inboundDate = item.inbound_date ? new Date(item.inbound_date).toISOString().split('T')[0] : '';
-          const prepDate = item.preparation_date ? new Date(item.preparation_date).toISOString().split('T')[0] : '';
 
+        if (filteredItems.length === 0) {
           tableHTML += `
-            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-              <td class="px-4 py-3">${item.inbound_no || ''}</td>
-              <td class="px-4 py-3">${item.stock_code || ''}</td>
-              <td class="px-4 py-3">${item.stock_name || ''}</td>
-              <td class="px-4 py-3">${inboundDate}</td>
-              <td class="px-4 py-3">${prepDate}</td>
-              <td class="px-4 py-3 text-right">${item.quantity || 0}</td>
-              <td class="px-4 py-3">${item.unit || ''}</td>
-              <td class="px-4 py-3">
-                <button class="select-item px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                        data-inbound-no="${item.inbound_no || ''}"
-                        data-code="${item.stock_code}"
-                        data-name="${item.stock_name || ''}"
-                        data-inbound-date="${inboundDate}"
-                        data-prep-date="${prepDate}"
-                        data-quantity="${item.quantity}"
-                        data-unit="${item.unit}">
-                  선택
-                </button>
+            <tr>
+              <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                출고 가능한 재고가 없습니다.
               </td>
             </tr>
           `;
+        } else {
+          filteredItems.forEach(item => {
+            const inboundDate = item.inbound_date ? new Date(item.inbound_date).toISOString().split('T')[0] : '';
+            const prepDate = item.preparation_date ? new Date(item.preparation_date).toISOString().split('T')[0] : '';
+
+            tableHTML += `
+              <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="px-4 py-3">${item.inbound_no || ''}</td>
+                <td class="px-4 py-3">${item.stock_code || ''}</td>
+                <td class="px-4 py-3">${item.stock_name || ''}</td>
+                <td class="px-4 py-3">${inboundDate}</td>
+                <td class="px-4 py-3">${prepDate}</td>
+                <td class="px-4 py-3 text-right">${item.quantity || 0}</td>
+                <td class="px-4 py-3">${item.unit || ''}</td>
+                <td class="px-4 py-3">
+                  <button class="select-item px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                          data-inbound-no="${item.inbound_no || ''}"
+                          data-code="${item.stock_code}"
+                          data-name="${item.stock_name || ''}"
+                          data-inbound-date="${inboundDate}"
+                          data-prep-date="${prepDate}"
+                          data-quantity="${item.quantity}"
+                          data-unit="${item.unit}">
+                    선택
+                  </button>
+                </td>
+              </tr>
+            `;
+          });
+        }
+
+        tableHTML += '</tbody></table>';
+        return tableHTML;
+      };
+
+      // 초기 테이블 표시
+      document.getElementById('itemTableContainer').innerHTML = renderTable(availableItems);
+
+      // 필터 이벤트 등록
+      const filterInput = document.getElementById('itemNameFilter');
+      filterInput.addEventListener('input', (e) => {
+        const filterText = e.target.value.toLowerCase();
+        const filteredItems = availableItems.filter(item => {
+          const itemName = (item.stock_name || '').toLowerCase();
+          return itemName.includes(filterText);
         });
-      }
+        document.getElementById('itemTableContainer').innerHTML = renderTable(filteredItems);
 
-      tableHTML += '</tbody></table>';
-
-      // 테이블 표시
-      document.getElementById('itemTableContainer').innerHTML = tableHTML;
-
-      // 선택 버튼 이벤트
-      document.querySelectorAll('.select-item').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const inboundNo = e.target.dataset.inboundNo;
-          const code = e.target.dataset.code;
-          const name = e.target.dataset.name;
-          const inboundDate = e.target.dataset.inboundDate;
-          const prepDate = e.target.dataset.prepDate;
-          const maxQuantity = e.target.dataset.quantity;
-          const unit = e.target.dataset.unit;
-
-          // 셀에 값 설정
-          cell.setValue(code);
-
-          // 같은 행의 다른 필드도 채우기
-          const row = cell.getRow();
-          if (inboundNo) {
-            row.getCell('inbound_no').setValue(inboundNo);
-          }
-          if (name) {
-            row.getCell('stock_name').setValue(name);
-          }
-          if (inboundDate) {
-            row.getCell('inbound_date').setValue(inboundDate);
-          }
-          if (prepDate) {
-            row.getCell('preparation_date').setValue(prepDate);
-          }
-          if (unit) {
-            row.getCell('unit').setValue(unit);
-          }
-
-          closeModal();
-        });
+        // 필터링 후 선택 버튼 이벤트 재등록
+        attachSelectButtons();
       });
+
+      // 선택 버튼 이벤트 등록 함수
+      const attachSelectButtons = () => {
+        document.querySelectorAll('.select-item').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const inboundNo = e.target.dataset.inboundNo;
+            const code = e.target.dataset.code;
+            const name = e.target.dataset.name;
+            const inboundDate = e.target.dataset.inboundDate;
+            const prepDate = e.target.dataset.prepDate;
+            const maxQuantity = e.target.dataset.quantity;
+            const unit = e.target.dataset.unit;
+
+            // 셀에 값 설정
+            cell.setValue(code);
+
+            // 같은 행의 다른 필드도 채우기
+            const row = cell.getRow();
+            if (inboundNo) {
+              row.getCell('inbound_no').setValue(inboundNo);
+            }
+            if (name) {
+              row.getCell('stock_name').setValue(name);
+            }
+            if (inboundDate) {
+              row.getCell('inbound_date').setValue(inboundDate);
+            }
+            if (prepDate) {
+              row.getCell('preparation_date').setValue(prepDate);
+            }
+            if (unit) {
+              row.getCell('unit').setValue(unit);
+            }
+
+            closeModal();
+          });
+        });
+      };
+
+      // 초기 선택 버튼 이벤트 등록
+      attachSelectButtons();
 
     } catch (error) {
       console.error('품목 목록 조회 실패:', error);

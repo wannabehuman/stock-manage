@@ -4,6 +4,7 @@ export { default as SearchForm } from './SearchForm.svelte';
 // Generic Components
 export { default as DateInput } from './DateInput.svelte';
 export { default as TextInput } from './TextInput.svelte';
+export { default as MonthInput } from './MonthInput.svelte';
 
 // Specific Components
 export { default as ItemCdInput } from './ItemCdInput.svelte';

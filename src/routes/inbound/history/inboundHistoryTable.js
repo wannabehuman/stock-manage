@@ -4,123 +4,140 @@ import { CommonTable } from '../../../lib/components/commonTabulator/commonTable
 export class InboundHistoryTable extends CommonTable {
   constructor() {
     super();
-    console.log('InboundHistoryTable constructor called');
-    
+
     // 검색 필터 데이터
     this.searchData = {
-      startDate: '',
-      endDate: '',
+      month: new Date().toISOString().substring(0, 7), // YYYY-MM 형식, 현재 월로 초기화
       itemCode: '',
       itemName: ''
     };
-    
-    // 테이블 필드 설정
-    const tableFields = [
-      { field: "select", title: "선택", width: 60, formatter: "tickCross", editor: true, headerSort: false },
-      { field: "ITEM_CD", title: "품목코드", width: 120, editor: "input", 
-        validation: [{ type: 'required' }] },
-      { field: "ITEM_NM", title: "품목명", width: 200, editor: "input",
-        validation: [{ type: 'required' }] },
-      { field: "INBOUND_QTY", title: "입고수량", width: 100, editor: "number", hozAlign: "right",
-        validation: [{ type: 'required' }, { type: 'number', params: { min: 1 } }] },
-      { field: "UNIT_PRICE", title: "단가", width: 100, editor: "number", hozAlign: "right",
-        validation: [{ type: 'number', params: { min: 0 } }] },
-      { field: "TOTAL_AMT", title: "총금액", width: 120, hozAlign: "right", 
-        mutator: (value, data) => (data.INBOUND_QTY || 0) * (data.UNIT_PRICE || 0) },
-      { field: "SUPPLIER_CD", title: "공급업체코드", width: 120, editor: "input" },
-      { field: "SUPPLIER_NM", title: "공급업체명", width: 150, editor: "input" },
-      { field: "EXPIRE_DT", title: "유통기한", width: 120, editor: "date" },
-      { field: "LOT_NO", title: "LOT번호", width: 120, editor: "input" },
-      { field: "LOCATION_CD", title: "저장위치", width: 100, editor: "input" },
-      { field: "Del_Check", title: "삭제", frozen: true,    width: 30, 
-        formatter: (cell) => {
-          // return '<i class="fas fa-trash text-red-500 cursor-pointer"></i>';
-        },
-        cellClick: (e, cell) => {
-          const row = cell.getRow();
-          row.delete();
-        }
-      },
-    ];
-    
+
+    // 초기 필드 설정 (현재 월의 일수로 시작)
+    const initialDays = this.getDaysInMonth(this.searchData.month);
+    const tableFields = this.generateDayColumns(initialDays);
+
     // 테이블 설정
-    console.log('Setting table fields:', tableFields);
     this.setFields(tableFields);
-    console.log('Setting table selector: inboundHistoryTable');
     this.setTbSelectorId('inboundHistoryTable');
-    this.setUniCD(['ITEM_CD', 'LOT_NO']); // 고유키 설정
+    this.setUniCD(['stock_code']); // 고유키 설정 (품목코드)
     this.setTableName('입고이력조회');
-    console.log('Table configuration completed');
-    
-    // AJAX 설정 (실제 API 엔드포인트로 변경 필요)
+
+    // Tabulator 설정 변경 (가로 스크롤 활성화, 품명 기준 정렬)
+    this.setCtbSetting({
+      layout: "fitData", // fitColumns 대신 fitData 사용
+      layoutColumnsOnNewData: true,
+      responsiveLayout: false, // 반응형 레이아웃 비활성화 - 모든 컬럼 표시
+      initialSort: [
+        { column: "item_name", dir: "asc" }
+      ]
+    });
+
+    // AJAX 설정
     this.setAjaxUrl('/api/inbound/history');
-    
+
     // 필터 셀렉터 설정
     this.setFilterSelector('[data-filter]');
-    
-    // 셀 수정 시 총금액 자동 계산
-    this.setCellEventList('edited', 'INBOUND_QTY', (cell) => {
-      this.calculateTotal(cell.getRow());
+    this.setTableBuilt();
+  }
+
+  // 해당 월의 일수를 계산
+  getDaysInMonth(yearMonth) {
+    if (!yearMonth) {
+      return 31; // 기본값
+    }
+    const [year, month] = yearMonth.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    return daysInMonth;
+  }
+
+  // 일별 컬럼 동적 생성
+  generateDayColumns(daysInMonth) {
+    console.log(`generateDayColumns called with daysInMonth=${daysInMonth}`);
+    const fields = [
+      // {
+      //   field: "stock_code",
+      //   title: "품목코드",
+      //   width: 150,
+      //   hozAlign: "center"
+      // },
+      {
+        field: "item_name",
+        title: "품목명",
+        width: 90,
+        hozAlign: "left"
+      },
+    ];
+
+    // 일자 컬럼 추가
+    for (let day = 1; day <= daysInMonth; day++) {
+      fields.push({
+        field: `day_${String(day).padStart(2, '0')}`,
+        title: `${day}`,
+        width: 50,
+        // minWidth: 45,
+        hozAlign: "right",
+        // headerHozAlign: "center",
+        formatter: (cell) => this.formatQuantity(cell),
+      });
+    }
+
+    // console.log(`Generated ${fields.length - 2} day columns (from day 1 to day ${daysInMonth})`);
+
+    // 합계 컬럼
+    fields.push({
+      field: "total_qty",
+      title: "합계",
+      width: 100,
+      hozAlign: "right",
+      formatter: (cell) => this.formatQuantity(cell),
+      cssClass: "font-semibold"
     });
-    
-    this.setCellEventList('edited', 'UNIT_PRICE', (cell) => {
-      this.calculateTotal(cell.getRow());
-    });
+
+    console.log(`Total fields: ${fields.length} (2 fixed + ${daysInMonth} days + 1 total)`);
+    return fields;
   }
-  
-  // 총금액 계산
-  calculateTotal(row) {
-    const data = row.getData();
-    const qty = parseFloat(data.OUTBOUND_QTY) || 0;
-    const price = parseFloat(data.UNIT_PRICE) || 0;
-    const total = qty * price;
-    
-    row.getCell('TOTAL_AMT').setValue(total);
+
+  // 수량 포맷팅 (0이면 빈 문자열, 아니면 숫자 표시)
+  formatQuantity(cell) {
+    const value = cell.getValue();
+    if (!value || value === 0) return '';
+    return value.toLocaleString();
   }
-  
-  // // 기본 입고 데이터 생성
-  // getDefaultRowData() {
-  //   return {
-  //     ITEM_CD: '',
-  //     ITEM_NM: '',
-  //      OUTBOUND_QTY: 1,
-  //     UNIT_PRICE: 0,
-  //     TOTAL_AMT: 0,
-  //     SUPPLIER_CD: '',
-  //     SUPPLIER_NM: '',
-  //     EXPIRE_DT: '',
-  //     LOT_NO: '',
-  //     LOCATION_CD: 'A-01',
-  //     REMARK: '',
-  //     INBOUND_DT: new Date().toISOString().split('T')[0] // 오늘 날짜
-  //   };
-  // }
-  
-  // 행 추가
-  addRow() {
-    console.log('InboundHistoryTable addRow called');
-    // const defaultData = this.getDefaultRowData();
-    super.addRow();
-    console.log('InboundHistoryTable addRow completed');
-  }
-  
-  // 데이터 저장
-  saveData() {
-    this.putData();
-  }
-  
+
   // 검색 데이터 업데이트
   updateSearchData(field, value) {
     this.searchData[field] = value;
   }
-  
+
   // 검색 데이터 가져오기
   getSearchData() {
     return this.searchData;
   }
-  
+
   // 검색 실행
   search() {
-    // this.getMainList();
+    // 선택된 월에 따라 테이블 컬럼 재생성
+    const daysInMonth = this.getDaysInMonth(this.searchData.month);
+    console.log('Days in month:', daysInMonth);
+
+    const newFields = this.generateDayColumns(daysInMonth);
+    console.log('Generated fields:', newFields.length, 'columns');
+
+    // 필드 업데이트
+    this.setFields(newFields);
+
+    if (this._tblList) {
+      // 기존 테이블 완전히 파괴
+      this._tblList.destroy();
+
+      // 테이블 재생성
+      this.init();
+
+      // 테이블이 재생성된 후 데이터 로드
+      setTimeout(() => {
+        
+        this.getMainList();
+      }, 100);
+    }
   }
 }

@@ -27,17 +27,23 @@ export {};
 
 declare module "$app/types" {
 	export interface AppTypes {
-		RouteId(): "/" | "/inbound" | "/inbound/current" | "/inbound/daily" | "/inbound/history" | "/inbound/register" | "/login" | "/logout" | "/master" | "/master/codes" | "/master/items" | "/modal-examples" | "/outbound" | "/outbound/history" | "/outbound/register" | "/users" | "/users/account" | "/users/management" | "/users/notifications";
+		RouteId(): "/" | "/api" | "/api/auth" | "/api/auth/change-password" | "/api/auth/login" | "/api/auth/register" | "/inbound" | "/inbound/current" | "/inbound/daily" | "/inbound/history" | "/inbound/register" | "/inbound/stock-status" | "/login" | "/logout" | "/master" | "/master/codes" | "/master/items" | "/modal-examples" | "/outbound" | "/outbound/history" | "/outbound/register" | "/system" | "/system/users" | "/users" | "/users/account" | "/users/approval" | "/users/management" | "/users/notifications";
 		RouteParams(): {
 			
 		};
 		LayoutParams(): {
 			"/": Record<string, never>;
+			"/api": Record<string, never>;
+			"/api/auth": Record<string, never>;
+			"/api/auth/change-password": Record<string, never>;
+			"/api/auth/login": Record<string, never>;
+			"/api/auth/register": Record<string, never>;
 			"/inbound": Record<string, never>;
 			"/inbound/current": Record<string, never>;
 			"/inbound/daily": Record<string, never>;
 			"/inbound/history": Record<string, never>;
 			"/inbound/register": Record<string, never>;
+			"/inbound/stock-status": Record<string, never>;
 			"/login": Record<string, never>;
 			"/logout": Record<string, never>;
 			"/master": Record<string, never>;
@@ -47,12 +53,15 @@ declare module "$app/types" {
 			"/outbound": Record<string, never>;
 			"/outbound/history": Record<string, never>;
 			"/outbound/register": Record<string, never>;
+			"/system": Record<string, never>;
+			"/system/users": Record<string, never>;
 			"/users": Record<string, never>;
 			"/users/account": Record<string, never>;
+			"/users/approval": Record<string, never>;
 			"/users/management": Record<string, never>;
 			"/users/notifications": Record<string, never>
 		};
-		Pathname(): "/" | "/inbound" | "/inbound/" | "/inbound/current" | "/inbound/current/" | "/inbound/daily" | "/inbound/daily/" | "/inbound/history" | "/inbound/history/" | "/inbound/register" | "/inbound/register/" | "/login" | "/login/" | "/logout" | "/logout/" | "/master" | "/master/" | "/master/codes" | "/master/codes/" | "/master/items" | "/master/items/" | "/modal-examples" | "/modal-examples/" | "/outbound" | "/outbound/" | "/outbound/history" | "/outbound/history/" | "/outbound/register" | "/outbound/register/" | "/users" | "/users/" | "/users/account" | "/users/account/" | "/users/management" | "/users/management/" | "/users/notifications" | "/users/notifications/";
+		Pathname(): "/" | "/api" | "/api/" | "/api/auth" | "/api/auth/" | "/api/auth/change-password" | "/api/auth/change-password/" | "/api/auth/login" | "/api/auth/login/" | "/api/auth/register" | "/api/auth/register/" | "/inbound" | "/inbound/" | "/inbound/current" | "/inbound/current/" | "/inbound/daily" | "/inbound/daily/" | "/inbound/history" | "/inbound/history/" | "/inbound/register" | "/inbound/register/" | "/inbound/stock-status" | "/inbound/stock-status/" | "/login" | "/login/" | "/logout" | "/logout/" | "/master" | "/master/" | "/master/codes" | "/master/codes/" | "/master/items" | "/master/items/" | "/modal-examples" | "/modal-examples/" | "/outbound" | "/outbound/" | "/outbound/history" | "/outbound/history/" | "/outbound/register" | "/outbound/register/" | "/system" | "/system/" | "/system/users" | "/system/users/" | "/users" | "/users/" | "/users/account" | "/users/account/" | "/users/approval" | "/users/approval/" | "/users/management" | "/users/management/" | "/users/notifications" | "/users/notifications/";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
 		Asset(): string & {};
 	}

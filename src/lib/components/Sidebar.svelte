@@ -1,6 +1,6 @@
 <script>
   import { Sidebar, SidebarGroup, SidebarItem, SidebarWrapper, Avatar, Badge, DarkMode } from 'flowbite-svelte';
-  import { ChartPieSolid, GridSolid, MailBoxSolid, UserSolid, UsersGroupSolid, ArrowRightToBracketOutline, CogSolid, BellSolid, ChevronDownOutline, ChevronRightOutline, DatabaseSolid, SearchSolid, ClipboardListSolid } from 'flowbite-svelte-icons';
+  import { ChartPieSolid, GridSolid, MailBoxSolid, UserSolid, UsersGroupSolid, ArrowRightToBracketOutline, CogSolid, BellSolid, ChevronDownOutline, ChevronRightOutline, DatabaseSolid, SearchSolid, ClipboardListSolid, AngleLeftOutline } from 'flowbite-svelte-icons';
   import { page } from '$app/stores';
   import { slide } from 'svelte/transition';
   
@@ -10,7 +10,7 @@
   let user = {
     name: "김관리자",
     role: "재고 관리자",
-    avatar: "https://flowbite.com/docs/images/people/profile-picture-5.jpg"
+    // avatar: "https://flowbite.com/docs/images/people/profile-picture-5.jpg"
   };
 
   // 실제 로그인된 사용자 정보 가져오기
@@ -106,13 +106,14 @@
   }
 </script>
 
-<Sidebar class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform {isOpen ? 'translate-x-0' : '-translate-x-full'} bg-gradient-to-b from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900 border-r border-gray-200 dark:border-gray-700">
+<Sidebar class="fixed top-0 left-0 z-40 h-screen transition-all duration-300 {isOpen ? 'w-64' : 'w-16'} dark:bg-gray-800 bg-gradient-to-b to-indigo-100 dark:from-gray-800 border-r border-gray-200 dark:border-gray-700">
   <SidebarWrapper class="px-3 py-4">
     <!-- 사용자 프로필 섹션 -->
-    <div class="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700" transition:slide>
+    {#if isOpen}
+    <div class="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
       <div class="flex items-center space-x-3">
         <a href="/users/account" class="cursor-pointer">
-          <Avatar src={user.avatar} size="md" class="ring-2 ring-blue-500 hover:ring-blue-600 transition-all" />
+          <!-- <Avatar src={user.avatar} size="md" class="ring-2 ring-blue-500 hover:ring-blue-600 transition-all" /> -->
         </a>
         <div class="flex-1 min-w-0">
           <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
@@ -122,7 +123,7 @@
             {user.role}
           </p>
         </div>
-        <div class="flex items-center space-x-2">
+        <div class="flex flex-row items-center space-y-2">
           <DarkMode size="sm" />
           <div class="relative">
             <BellSolid class="w-5 h-5 text-gray-400 hover:text-blue-600 cursor-pointer" />
@@ -132,24 +133,63 @@
               </Badge>
             {/if}
           </div>
+          <button
+            on:click={() => isOpen = !isOpen}
+            class="p-1 text-gray-500 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+            aria-label="Toggle sidebar"
+          >
+            <AngleLeftOutline class="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>
+    {:else}
+    <!-- 축소된 프로필 -->
+    <div class="mb-6 flex flex-col items-center space-y-3 pt-2">
+      <button
+        on:click={() => isOpen = !isOpen}
+        class="p-1 text-gray-500 rounded hover:bg-white dark:hover:bg-gray-700 transition-all"
+        aria-label="Toggle sidebar"
+      >
+        <AngleLeftOutline class="w-4 h-4 rotate-180" />
+      </button>
+      <a href="/users/account" class="cursor-pointer">
+        <Avatar src={user.avatar} size="sm" class="ring-2 ring-blue-500 hover:ring-blue-600 transition-all" />
+      </a>
+      <div class="relative">
+        <BellSolid class="w-5 h-5 text-gray-400 hover:text-blue-600 cursor-pointer" />
+        {#if notifications > 0}
+          <Badge color="red" class="absolute -top-2 -right-2 w-4 h-4 text-[10px] p-0 flex items-center justify-center">
+            {notifications}
+          </Badge>
+        {/if}
+      </div>
+    </div>
+    {/if}
 
     <!-- 메인 메뉴 -->
     <SidebarGroup>
+      {#if isOpen}
       <h3 class="mb-3 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">메인 메뉴</h3>
-      
+      {/if}
+
       <!-- 대시보드 -->
+      {#if isOpen}
       <SidebarItem label="대시보드" href="/" class="mb-1 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 {$page.url.pathname === '/' ? 'bg-blue-100 dark:bg-gray-700 border-r-4 border-blue-500' : ''}">
         <svelte:fragment slot="icon">
           <ChartPieSolid class="w-5 h-5 text-blue-600 dark:text-blue-400" />
         </svelte:fragment>
       </SidebarItem>
-      
+      {:else}
+      <a href="/" class="flex items-center justify-center mb-1 p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition-all {$page.url.pathname === '/' ? 'bg-blue-100 dark:bg-gray-700' : ''}" title="대시보드">
+        <ChartPieSolid class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+      </a>
+      {/if}
+
       <!-- 기준정보관리 -->
       <div class="mb-1">
-        <button 
+        {#if isOpen}
+        <button
           on:click={() => toggleMenu('master')}
           class="w-full flex items-center p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 hover:bg-yellow-50 dark:hover:bg-gray-700 dark:text-white group text-left {$page.url.pathname.startsWith('/master') ? 'bg-yellow-100 dark:bg-gray-700 border-r-4 border-yellow-500' : ''}"
         >
@@ -175,11 +215,17 @@
             </SidebarItem>
           </div>
         {/if}
+        {:else}
+        <a href="/master/items" class="flex items-center justify-center p-2 rounded-lg hover:bg-yellow-50 dark:hover:bg-gray-700 transition-all {$page.url.pathname.startsWith('/master') ? 'bg-yellow-100 dark:bg-gray-700' : ''}" title="기준정보관리">
+          <DatabaseSolid class="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+        </a>
+        {/if}
       </div>
-      
+
       <!-- 입고관리 -->
       <div class="mb-1">
-        <button 
+        {#if isOpen}
+        <button
           on:click={() => toggleMenu('inbound')}
           class="w-full flex items-center p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 hover:bg-green-50 dark:hover:bg-gray-700 dark:text-white group text-left {$page.url.pathname.startsWith('/inbound') ? 'bg-green-100 dark:bg-gray-700 border-r-4 border-green-500' : ''}"
         >
@@ -198,27 +244,28 @@
                 <GridSolid class="w-4 h-4 text-green-500" />
               </svelte:fragment>
             </SidebarItem>
-            <!-- <SidebarItem label="현재고조회" href="/inbound/current" class="text-sm hover:bg-green-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/inbound/current' ? 'bg-green-50 dark:bg-gray-600' : ''}">
+            <SidebarItem label="재고현황" href="/inbound/stock-status" class="text-sm hover:bg-green-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/inbound/stock-status' ? 'bg-green-50 dark:bg-gray-600' : ''}">
               <svelte:fragment slot="icon">
                 <SearchSolid class="w-4 h-4 text-green-500" />
               </svelte:fragment>
-            </SidebarItem> -->
-            <!-- <SidebarItem label="입고이력조회" href="/inbound/history" class="text-sm hover:bg-green-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/inbound/history' ? 'bg-green-50 dark:bg-gray-600' : ''}">
+            </SidebarItem>
+            <SidebarItem label="입고이력조회" href="/inbound/history" class="text-sm hover:bg-green-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/inbound/history' ? 'bg-green-50 dark:bg-gray-600' : ''}">
               <svelte:fragment slot="icon">
                 <ClipboardListSolid class="w-4 h-4 text-green-500" />
-              </svelte:fragment>
-            </SidebarItem> -->
-            <SidebarItem label="일별입고이력" href="/inbound/daily" class="text-sm hover:bg-green-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/inbound/daily' ? 'bg-green-50 dark:bg-gray-600' : ''}">
-              <svelte:fragment slot="icon">
-                <ChartPieSolid class="w-4 h-4 text-green-500" />
               </svelte:fragment>
             </SidebarItem>
           </div>
         {/if}
+        {:else}
+        <a href="/inbound/register" class="flex items-center justify-center p-2 rounded-lg hover:bg-green-50 dark:hover:bg-gray-700 transition-all {$page.url.pathname.startsWith('/inbound') ? 'bg-green-100 dark:bg-gray-700' : ''}" title="입고관리">
+          <MailBoxSolid class="w-5 h-5 text-green-600 dark:text-green-400" />
+        </a>
+        {/if}
       </div>
      <!-- 출고관리 -->
      <div class="mb-1">
-      <button 
+      {#if isOpen}
+      <button
         on:click={() => toggleMenu('outbound')}
         class="w-full flex items-center p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 hover:bg-red-50 dark:hover:bg-gray-700 dark:text-white group text-left {$page.url.pathname.startsWith('/outbound') ? 'bg-red-100 dark:bg-gray-700 border-r-4 border-red-500' : ''}"
       >
@@ -237,17 +284,23 @@
               <MailBoxSolid class="w-4 h-4 text-red-500" />
             </svelte:fragment>
           </SidebarItem>
-          <!-- <SidebarItem label="출고이력조회" href="/outbound/history" class="text-sm hover:bg-red-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/outbound/history' ? 'bg-red-50 dark:bg-gray-600' : ''}">
+          <SidebarItem label="출고이력조회" href="/outbound/history" class="text-sm hover:bg-red-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/outbound/history' ? 'bg-red-50 dark:bg-gray-600' : ''}">
             <svelte:fragment slot="icon">
               <ClipboardListSolid class="w-4 h-4 text-red-500" />
             </svelte:fragment>
-          </SidebarItem> -->
+          </SidebarItem>
         </div>
+      {/if}
+      {:else}
+      <a href="/outbound/register" class="flex items-center justify-center p-2 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700 transition-all {$page.url.pathname.startsWith('/outbound') ? 'bg-red-100 dark:bg-gray-700' : ''}" title="출고관리">
+        <MailBoxSolid class="w-5 h-5 text-red-600 dark:text-red-400" />
+      </a>
       {/if}
     </div>
     <!-- 사용자관리 -->
     <div class="mb-1">
-      <button 
+      {#if isOpen}
+      <button
         on:click={() => toggleMenu('users')}
         class="w-full flex items-center p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 hover:bg-red-50 dark:hover:bg-gray-700 dark:text-white group text-left {$page.url.pathname.startsWith('/users') ? 'bg-purple-100 dark:bg-gray-700 border-r-4 border-purple-500' : ''}"
       >
@@ -266,7 +319,7 @@
               <UserSolid class="w-4 h-4 text-purple-500" />
             </svelte:fragment>
           </SidebarItem>
-          <SidebarItem label="회원관리" href="/users/management" class="text-sm hover:bg-purple-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/users/management' ? 'bg-purple-50 dark:bg-gray-600' : ''}">
+          <SidebarItem label="회원관리" href="/system/users" class="text-sm hover:bg-purple-25 dark:hover:bg-gray-600 rounded-lg {$page.url.pathname === '/system/users' ? 'bg-purple-50 dark:bg-gray-600' : ''}">
             <svelte:fragment slot="icon">
               <UsersGroupSolid class="w-4 h-4 text-purple-500" />
             </svelte:fragment>
@@ -278,6 +331,11 @@
           </SidebarItem>
         </div>
       {/if}
+      {:else}
+      <a href="/users/account" class="flex items-center justify-center p-2 rounded-lg hover:bg-purple-50 dark:hover:bg-gray-700 transition-all {$page.url.pathname.startsWith('/users') ? 'bg-purple-100 dark:bg-gray-700' : ''}" title="사용자관리">
+        <CogSolid class="w-5 h-5 text-purple-600 dark:text-purple-400" />
+      </a>
+      {/if}
     </div>
       <!-- 계정관리 -->
       <!-- <SidebarItem label="계정관리" href="/users" class="mb-1 hover:bg-purple-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 {$page.url.pathname.startsWith('/users') ? 'bg-purple-100 dark:bg-gray-700 border-r-4 border-purple-500' : ''}">
@@ -287,40 +345,27 @@
       </SidebarItem> -->
       
       <!-- 모달 예시 -->
-      <SidebarItem label="모달 예시" href="/modal-examples" class="mb-1 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 {$page.url.pathname.startsWith('/modal-examples') ? 'bg-indigo-100 dark:bg-gray-700 border-r-4 border-indigo-500' : ''}">
+      <!-- <SidebarItem label="모달 예시" href="/modal-examples" class="mb-1 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 {$page.url.pathname.startsWith('/modal-examples') ? 'bg-indigo-100 dark:bg-gray-700 border-r-4 border-indigo-500' : ''}">
         <svelte:fragment slot="icon">
           <CogSolid class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
         </svelte:fragment>
-      </SidebarItem>
+      </SidebarItem> -->
     </SidebarGroup>
 
     <!-- 하단 고정 메뉴 -->
     <div class="absolute bottom-4 left-3 right-3">
       <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+        {#if isOpen}
         <SidebarItem label="로그아웃" href="/logout" class="hover:bg-red-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 text-red-600 dark:text-red-400">
           <svelte:fragment slot="icon">
             <ArrowRightToBracketOutline class="w-5 h-5 text-red-600 dark:text-red-400" />
           </svelte:fragment>
         </SidebarItem>
-      </div>
-      
-      <!-- 빠른 통계 카드 -->
-      <div class="mt-4 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">오늘의 요약</h4>
-        <div class="space-y-1">
-          <div class="flex justify-between text-xs">
-            <span class="text-gray-600 dark:text-gray-300">신규 입고</span>
-            <span class="font-semibold text-green-600">+15</span>
-          </div>
-          <div class="flex justify-between text-xs">
-            <span class="text-gray-600 dark:text-gray-300">출고 완료</span>
-            <span class="font-semibold text-blue-600">8</span>
-          </div>
-          <div class="flex justify-between text-xs">
-            <span class="text-gray-600 dark:text-gray-300">재고 부족</span>
-            <span class="font-semibold text-red-600">{lowStockItems}</span>
-          </div>
-        </div>
+        {:else}
+        <a href="/logout" class="flex items-center justify-center p-2 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700 transition-all" title="로그아웃">
+          <ArrowRightToBracketOutline class="w-5 h-5 text-red-600 dark:text-red-400" />
+        </a>
+        {/if}
       </div>
     </div>
   </SidebarWrapper>

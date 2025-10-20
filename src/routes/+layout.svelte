@@ -12,10 +12,6 @@
   let currentUser = null;
   let isInitialized = false;
 
-  function toggleSidebar() {
-    sidebarOpen = !sidebarOpen;
-  }
-
   // 로그인이 필요 없는 페이지들
   const publicRoutes = ['/login', '/logout'];
 
@@ -102,11 +98,10 @@
   <!-- 일반 페이지는 사이드바와 함께 -->
   <div class="antialiased bg-gray-50 dark:bg-gray-900">
     <!-- Sidebar -->
-    <Sidebar isOpen={sidebarOpen} />
+    <Sidebar bind:isOpen={sidebarOpen} />
 
     <!-- Main content -->
-    <main class="p-4 {sidebarOpen ? 'md:ml-64' : ''} h-screen transition-all duration-300"
-          in:fly="{{x: sidebarOpen ? 256 : 0, duration: 300}}">
+    <main class="p-4 h-screen transition-all duration-300 {sidebarOpen ? 'ml-64' : 'ml-16'}">
       <slot />
     </main>
   </div>

@@ -16,7 +16,7 @@ export class ItemsTable extends CommonTable {
 
     // 테이블 필드 설정
     const tableFields = [
-      { field: "select", title: "선택", width: 60, formatter: "tickCross", editor: true, headerSort: false },
+      // { field: "select", title: "선택", width: 60, formatter: "tickCross", editor: true, headerSort: false },
       { field: "code", title: "품목코드", width: 150, editor: "input",
         validation: [{ type: 'required' }] },
       { field: "name", title: "품목명", width: 200, editor: "input",
@@ -30,11 +30,28 @@ export class ItemsTable extends CommonTable {
         editor: createCodeEditor('UNIT'),
         formatter: createCodeFormatter('UNIT'),
         validation: [{ type: 'required' }] },
-      { field: "max_use_period", title: "최대사용기간(일)", width: 120, editor: "number", hozAlign: "right" },
+      { field: "max_use_period", title: "최대사용기간(일)", width: 150, editor: "number", hozAlign: "right",
+        editorParams: { min: 0, step: 1, selectContents: true },
+        validator: ["integer", "min:0"],
+        formatter: (cell) => {
+          const value = cell.getValue();
+          if (value === null || value === undefined || value === '') return '';
+          return Math.floor(Number(value)).toLocaleString();
+        }
+      },
+      { field: "safety_stock", title: "안전재고", width: 120, editor: "number", hozAlign: "right",
+        editorParams: { min: 0, step: 1, selectContents: true },
+        validator: ["integer", "min:0"],
+        formatter: (cell) => {
+          const value = cell.getValue();
+          if (value === null || value === undefined || value === '') return '';
+          return Math.floor(Number(value)).toLocaleString();
+        }
+      },
       { field: "remark", title: "비고", width: 200, editor: "input" },
-      { field: "isAlert", title: "알림", width: 80, formatter: "tickCross", editor: true, hozAlign: "center" },
-      { field: "isActive", title: "활성", width: 80, formatter: "tickCross", editor: true, hozAlign: "center" },
-      { field: "Del_Check", title: "삭제", frozen: true, width: 30,
+      // { field: "isAlert", title: "알림", width: 80, formatter: "tickCross", editor: true, hozAlign: "center" },
+      // { field: "isActive", title: "활성", width: 80, formatter: "tickCross", editor: true, hozAlign: "center" },
+      { field: "Del_Check", title: "삭제", frozen: true, width: 70,
         formatter: (cell) => {
             return '🗑️';
           // return '<i class="fas fa-trash text-red-500 cursor-pointer"></i>';
@@ -49,6 +66,14 @@ export class ItemsTable extends CommonTable {
     this.setTbSelectorId('itemsTable');
     this.setUniCD(['code']); // 고유키 설정
     this.setTableName('품목관리');
+
+    // 품명 기준 정렬 설정
+    this.setCtbSetting({
+      initialSort: [
+        { column: "name", dir: "asc" }
+      ]
+    });
+
     this.setTableBuilt();
     console.log('Table configuration completed');
 
@@ -67,6 +92,7 @@ export class ItemsTable extends CommonTable {
       category: '',
       unit: 'EA',
       max_use_period: null,
+      safety_stock: 0,
       remark: '',
       isAlert: false,
       isActive: true
@@ -241,6 +267,14 @@ export class ItemsTable extends CommonTable {
                   </svg>
                 </button>
               </div>
+              <div class="mb-4">
+                <input
+                  type="text"
+                  id="searchItemNameFilter"
+                  placeholder="품명으로 검색..."
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
               <div id="searchItemTableContainer" style="height: 400px; overflow: auto;">
                 <div class="text-center py-4">
                   <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
@@ -279,65 +313,94 @@ export class ItemsTable extends CommonTable {
         body: JSON.stringify({})
       });
 
-      const items = await response.json();
+      let items = await response.json();
 
-      // 테이블 HTML 생성
-      let tableHTML = `
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
-            <tr>
-              <th class="px-4 py-3">품목코드</th>
-              <th class="px-4 py-3">품목명</th>
-              <th class="px-4 py-3">카테고리</th>
-              <th class="px-4 py-3">단위</th>
-              <th class="px-4 py-3">선택</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
+      // 품명 기준 가나다순 정렬
+      items.sort((a, b) => {
+        const nameA = a.name || '';
+        const nameB = b.name || '';
+        return nameA.localeCompare(nameB, 'ko-KR');
+      });
 
-      items.forEach(item => {
-        tableHTML += `
-          <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-            <td class="px-4 py-3">${item.code || ''}</td>
-            <td class="px-4 py-3">${item.name || ''}</td>
-            <td class="px-4 py-3">${item.category || ''}</td>
-            <td class="px-4 py-3">${item.unit || ''}</td>
-            <td class="px-4 py-3">
-              <button class="select-search-item px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                      data-code="${item.code}"
-                      data-name="${item.name}">
-                선택
-              </button>
-            </td>
-          </tr>
+      // 테이블 렌더링 함수
+      const renderTable = (filteredItems) => {
+        let tableHTML = `
+          <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
+              <tr>
+                <th class="px-4 py-3">품목코드</th>
+                <th class="px-4 py-3">품목명</th>
+                <th class="px-4 py-3">카테고리</th>
+                <th class="px-4 py-3">단위</th>
+                <th class="px-4 py-3">선택</th>
+              </tr>
+            </thead>
+            <tbody>
         `;
-      });
 
-      tableHTML += '</tbody></table>';
-
-      // 테이블 표시
-      document.getElementById('searchItemTableContainer').innerHTML = tableHTML;
-
-      // 선택 버튼 이벤트
-      document.querySelectorAll('.select-search-item').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const code = e.target.dataset.code;
-          const name = e.target.dataset.name;
-
-          // 검색 데이터에 설정
-          this.updateSearchData('itemCode', code);
-          this.updateSearchData('itemName', name);
-
-          // 입력 필드에 값 표시
-          const itemCodeInput = document.querySelector('[data-name="ITEM_CD"]');
-          const itemNameInput = document.querySelector('[data-name="ITEM_NM"]');
-          if (itemCodeInput) itemCodeInput.value = code;
-          if (itemNameInput) itemNameInput.value = name;
-
-          closeModal();
+        filteredItems.forEach(item => {
+          tableHTML += `
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+              <td class="px-4 py-3">${item.code || ''}</td>
+              <td class="px-4 py-3">${item.name || ''}</td>
+              <td class="px-4 py-3">${item.category || ''}</td>
+              <td class="px-4 py-3">${item.unit || ''}</td>
+              <td class="px-4 py-3">
+                <button class="select-search-item px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                        data-code="${item.code}"
+                        data-name="${item.name}">
+                  선택
+                </button>
+              </td>
+            </tr>
+          `;
         });
+
+        tableHTML += '</tbody></table>';
+        return tableHTML;
+      };
+
+      // 초기 테이블 표시
+      document.getElementById('searchItemTableContainer').innerHTML = renderTable(items);
+
+      // 필터 이벤트 등록
+      const filterInput = document.getElementById('searchItemNameFilter');
+      filterInput.addEventListener('input', (e) => {
+        const filterText = e.target.value.toLowerCase();
+        const filteredItems = items.filter(item => {
+          const itemName = (item.name || '').toLowerCase();
+          return itemName.includes(filterText);
+        });
+        document.getElementById('searchItemTableContainer').innerHTML = renderTable(filteredItems);
+
+        // 필터링 후 선택 버튼 이벤트 재등록
+        attachSelectButtons();
       });
+
+      // 선택 버튼 이벤트 등록 함수
+      const attachSelectButtons = () => {
+        document.querySelectorAll('.select-search-item').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const code = e.target.dataset.code;
+            const name = e.target.dataset.name;
+
+            // 검색 데이터에 설정
+            this.updateSearchData('itemCode', code);
+            this.updateSearchData('itemName', name);
+
+            // 입력 필드에 값 표시
+            const itemCodeInput = document.querySelector('[data-name="ITEM_CD"]');
+            const itemNameInput = document.querySelector('[data-name="ITEM_NM"]');
+            if (itemCodeInput) itemCodeInput.value = code;
+            if (itemNameInput) itemNameInput.value = name;
+
+            closeModal();
+          });
+        });
+      };
+
+      // 초기 선택 버튼 이벤트 등록
+      attachSelectButtons();
 
     } catch (error) {
       console.error('품목 목록 조회 실패:', error);

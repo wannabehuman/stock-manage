@@ -83,18 +83,20 @@
     <div class="flex flex-col min-w-0">
       <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3 flex-shrink-0">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">대분류 (코드그룹)</h2>
-        <Button color="green" class="w-full sm:w-auto flex-shrink-0" on:click={() => {
-          console.log('Add row button clicked, codesTable:', codesTable);
-          codesTable?.addRow();
-        }}>
-          + 행 추가
-        </Button>
-        <Button color="blue" on:click={() => {
-          codesTable?.saveData();
-          // codesTable?.codesTable2?.saveData();
-        }}>
-          💾 저장
-        </Button>
+        <div class='flex gap-2 flex-shrink-0'>
+          <Button color="green" class="w-full sm:w-auto flex-shrink-0" on:click={() => {
+            console.log('Add row button clicked, codesTable:', codesTable);
+            codesTable?.addRow();
+          }}>
+            + 행 추가
+          </Button>
+          <Button color="blue" on:click={() => {
+            codesTable?.saveData();
+            // codesTable?.codesTable2?.saveData();
+          }}>
+            💾 저장
+          </Button>
+        </div>
       </div>
       <div id="codesTable" class="w-full flex-1 min-h-0 overflow-auto"></div>
     </div>
@@ -103,18 +105,20 @@
     <div class="flex flex-col min-w-0">
       <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3 flex-shrink-0">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">소분류 (코드상세)</h2>
-        <Button color="green" class="w-full sm:w-auto flex-shrink-0" on:click={() => {
-          // console.log('Add row button clicked, codesTable2:', codesTable2);
-          codesTable.addRow2();
-        }}>
-          + 행 추가
-        </Button>
-        <Button color="blue" on:click={() => {
-          // codesTable?.saveData();
+        <div class='flex gap-2 flex-shrink-0'>
+          <Button color="green" class="w-full sm:w-auto flex-shrink-0" on:click={() => {
+            // console.log('Add row button clicked, codesTable2:', codesTable2);
+            codesTable.addRow2();
+          }}>
+            + 행 추가
+          </Button>
+          <Button color="blue" on:click={() => {
+            // codesTable?.saveData();
           codesTable?.codesTable2?.saveData();
         }}>
           💾 저장
         </Button>
+        </div>
       </div>
       <div id="codesTable2" class="w-full flex-1 min-h-0 overflow-auto"></div>
     </div>

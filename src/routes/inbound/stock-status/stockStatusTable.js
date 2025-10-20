@@ -1,89 +1,63 @@
 import { CommonTable } from '../../../lib/components/commonTabulator/commonTable.js';
 
-// 입고등록 테이블 클래스 (CommonTable 상속)
-export class InboundRegisterTable extends CommonTable {
+// 재고현황 테이블 클래스
+export class StockStatusTable extends CommonTable {
   constructor() {
     super();
-    console.log('InboundRegisterTable constructor called');
-    
+
     // 검색 필터 데이터
     this.searchData = {
-      startDate: '',
-      endDate: '',
+      itemGrpCode: '',
       itemCode: '',
       itemName: ''
     };
-    
+
     // 테이블 필드 설정
     const tableFields = [
-      // { field: "select", title: "선택", width: 60, formatter: "tickCross", editor: true, headerSort: false },
-      { field: "inbound_no", title: "입고번호", width: 120, editor: "input" },
-      { field: "stock_code", title: "품목코드", width: 120,
-        validation: [{ type: 'required' }],
-        cellClick: (e, cell) => {
-          this.openItemModal(cell);
+      { field: "stock_code", title: "품목코드", width: 150, frozen: true },
+      { field: "stock_name", title: "품목명", width: 200, frozen: true },
+      { field: "category", title: "카테고리", width: 150 },
+      { field: "unit", title: "단위", width: 100, hozAlign: "center" },
+      { field: "current_quantity", title: "현재고", width: 120, hozAlign: "right",
+        formatter: (cell) => {
+          const value = cell.getValue();
+          return value ? Number(value).toLocaleString() : '0';
+        }
+      },
+      { field: "inbound_count", title: "입고건수", width: 100, hozAlign: "right",
+        formatter: (cell) => {
+          const value = cell.getValue();
+          return value ? Number(value).toLocaleString() : '0';
+        }
+      },
+      { field: "outbound_count", title: "출고건수", width: 100, hozAlign: "right",
+        formatter: (cell) => {
+          const value = cell.getValue();
+          return value ? Number(value).toLocaleString() : '0';
+        }
+      },
+      { field: "safety_stock", title: "안전재고", width: 120, hozAlign: "right",
+        formatter: (cell) => {
+          const value = cell.getValue();
+          return value ? Number(value).toLocaleString() : '0';
+        }
+      },
+
+      { field: "history", title: "이력", width: 80, hozAlign: "center", headerSort: false,
+        formatter: (cell) => {
+          return '<button class="stock-history-btn px-2 py-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300" title="입출고 이력 보기">📋</button>';
         },
-        formatter: (cell) => {
-          const value = cell.getValue();
-          return value || '<span style="color: #999;">클릭하여 품목 선택</span>';
-        }
-      },
-      { field: "stock_name", title: "품목명", width: 150, editor: false },
-      { field: "inbound_date", title: "입고일자", width: 120, editor: "date",
-        validation: [{ type: 'required' }],
-        formatter: (cell) => {
-          const value = cell.getValue();
-          if (!value) return '';
-          const date = value instanceof Date ? value : new Date(value);
-          if (isNaN(date.getTime())) return value;
-          return date.toISOString().split('T')[0];
-        }
-      },
-      { field: "preparation_date", title: "조제일자", width: 120, editor: "date",
-        formatter: (cell) => {
-          const value = cell.getValue();
-          if (!value) return '';
-          const date = value instanceof Date ? value : new Date(value);
-          if (isNaN(date.getTime())) return value;
-          return date.toISOString().split('T')[0];
-        }
-      },
-      { field: "quantity", title: "수량", width: 100, editor: "number", hozAlign: "right",
-        editorParams: { min: 0, step: 1, selectContents: true },
-        validator: ["required", "integer", "min:0"],
-        formatter: (cell) => {
-          const value = cell.getValue();
-          if (value === null || value === undefined || value === '') return '';
-          return Math.floor(Number(value)).toLocaleString();
-        }
-      },
-      { field: "unit", title: "단위", width: 80, editor: "input",
-        validation: [{ type: 'required' }] },
-      { field: "expiry_date", title: "유통기한", width: 120, editor: false,
-        formatter: (cell) => {
-          const value = cell.getValue();
-          if (!value) return '';
-          const date = value instanceof Date ? value : new Date(value);
-          if (isNaN(date.getTime())) return value;
-          return date.toISOString().split('T')[0];
-        }
-      },
-      { field: "remark", title: "비고", width: 200, editor: "input" },
-      { field: "Del_Check", title: "삭제", frozen: true, width: 70,
-        formatter: (cell) => {
-          return '🗑️';
+        cellClick: (e, cell) => {
+          const rowData = cell.getRow().getData();
+          this.openStockHistoryModal(rowData);
         }
       },
     ];
 
-    // 테이블 설정
-    console.log('Setting table fields:', tableFields);
     this.setFields(tableFields);
-    console.log('Setting table selector: inboundTable');
-    this.setTbSelectorId('inboundTable');
-    this.setUniCD(['inbound_no']); // 고유키 설정
-    this.setTableName('입고등록');
-
+    this.setTbSelectorId('stockStatusTable');
+    this.setTableName('재고현황');
+    this.setTableBuilt();
     // 품명 기준 정렬 설정
     this.setCtbSetting({
       initialSort: [
@@ -91,59 +65,29 @@ export class InboundRegisterTable extends CommonTable {
       ]
     });
 
-    this.setTableBuilt(); // 테이블 생성 시 자동 데이터 로드
-    console.log('Table configuration completed');
-
     // AJAX 설정
-    this.setAjaxUrl('/api/inbound');
+    this.setAjaxUrl('/api/real-stock/status');
 
     // 필터 셀렉터 설정
     this.setFilterSelector('[data-filter]');
   }
-  
-  // 기본 입고 데이터 생성
-  getDefaultRowData() {
-    const today = new Date().toISOString().split('T')[0];
-    return {
-      inbound_no: '', // 서버에서 자동 생성
-      stock_code: '',
-      inbound_date: today,
-      preparation_date: null,
-      quantity: 0,
-      unit: 'EA',
-      remark: ''
-    };
-  }
 
-  // 행 추가
-  addRow() {
-    console.log('InboundRegisterTable addRow called');
-    const defaultData = this.getDefaultRowData();
-    super.addRow(defaultData);
-    console.log('InboundRegisterTable addRow completed');
-  }
-  
-  // 데이터 저장
-  saveData() {
-    this.putData();
-  }
-  
   // 검색 데이터 업데이트
   updateSearchData(field, value) {
     this.searchData[field] = value;
   }
-  
+
   // 검색 데이터 가져오기
   getSearchData() {
     return this.searchData;
   }
-  
+
   // 검색 실행
   search() {
     this.getMainList();
   }
 
-  // 검색 필터용 품목 선택 모달 (검색 조건에 품목코드/품목명 설정)
+  // 품목 검색 모달 열기
   async openSearchItemModal() {
     // 모달이 이미 열려있으면 무시
     if (document.getElementById('searchItemModal')) {
@@ -309,39 +253,42 @@ export class InboundRegisterTable extends CommonTable {
     }
   }
 
-  // 품목 선택 모달 열기 (테이블 셀용)
-  async openItemModal(cell) {
+  // 재고 이력 모달 열기
+  async openStockHistoryModal(stockData) {
     // 모달이 이미 열려있으면 무시
-    if (document.getElementById('itemModal')) {
+    if (document.getElementById('stockHistoryModal')) {
       return;
     }
 
+    const stockCode = stockData.stock_code;
+    const stockName = stockData.stock_name;
+
     // 모달 HTML 생성
     const modalHTML = `
-      <div id="itemModal" class="fixed inset-0 z-50 overflow-y-auto" style="background-color: rgba(0,0,0,0.5);">
+      <div id="stockHistoryModal" class="fixed inset-0 z-50 overflow-y-auto" style="background-color: rgba(0,0,0,0.5);">
         <div class="flex items-center justify-center min-h-screen p-4">
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl">
-            <div class="p-6">
-              <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">품목 선택</h3>
-                <button id="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div class="flex justify-between items-center">
+                <div>
+                  <h3 class="text-xl font-semibold text-gray-900 dark:text-white">재고 입출고 이력</h3>
+                  <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    품목코드: ${stockCode} | 품목명: ${stockName}
+                  </p>
+                </div>
+                <button id="closeStockHistoryModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                   </svg>
                 </button>
               </div>
-              <div class="mb-4">
-                <input
-                  type="text"
-                  id="itemNameFilter"
-                  placeholder="품명으로 검색..."
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div id="itemTableContainer" style="height: 400px; overflow: auto;">
-                <div class="text-center py-4">
+            </div>
+
+            <div class="flex-1 overflow-auto p-6">
+              <div id="stockHistoryTableContainer">
+                <div class="text-center py-8">
                   <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-                  <p class="mt-2 text-gray-600 dark:text-gray-400">품목 목록을 불러오는 중...</p>
+                  <p class="mt-2 text-gray-600 dark:text-gray-400">이력을 불러오는 중...</p>
                 </div>
               </div>
             </div>
@@ -355,147 +302,137 @@ export class InboundRegisterTable extends CommonTable {
 
     // 닫기 버튼 이벤트
     const closeModal = () => {
-      const modal = document.getElementById('itemModal');
+      const modal = document.getElementById('stockHistoryModal');
       if (modal) {
         modal.remove();
       }
     };
 
-    document.getElementById('closeModal').addEventListener('click', closeModal);
-    document.getElementById('itemModal').addEventListener('click', (e) => {
-      if (e.target.id === 'itemModal') {
+    document.getElementById('closeStockHistoryModal').addEventListener('click', closeModal);
+    document.getElementById('stockHistoryModal').addEventListener('click', (e) => {
+      if (e.target.id === 'stockHistoryModal') {
         closeModal();
       }
     });
 
     try {
-      // 품목 목록과 재고 정보 동시에 가져오기
-      const [itemsResponse, stockResponse] = await Promise.all([
-        fetch('/api/stock-base', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
-        }),
-        fetch('/api/inbound', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
-        })
-      ]);
-
-      let items = await itemsResponse.json();
-      const stockItems = await stockResponse.json();
-
-      // 품명 기준 가나다순 정렬
-      items.sort((a, b) => {
-        const nameA = a.name || '';
-        const nameB = b.name || '';
-        return nameA.localeCompare(nameB, 'ko-KR');
+      // 입출고 이력 가져오기
+      const response = await fetch(`/api/real-stock/history/${stockCode}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
       });
 
-      // 품목별 현재 재고 수량 집계
-      const stockMap = {};
-      stockItems.forEach(stock => {
-        if (!stockMap[stock.stock_code]) {
-          stockMap[stock.stock_code] = 0;
-        }
-        stockMap[stock.stock_code] += parseFloat(stock.quantity) || 0;
+      if (!response.ok) {
+        throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
+      }
+
+      const history = await response.json();
+
+      // 날짜 기준 최신순 정렬
+      history.sort((a, b) => {
+        const dateA = new Date(a.io_date || a.inbound_date);
+        const dateB = new Date(b.io_date || b.inbound_date);
+        return dateB - dateA; // 최신순
       });
 
-      // 테이블 렌더링 함수
-      const renderTable = (filteredItems) => {
-        let tableHTML = `
+      // 테이블 HTML 생성
+      let tableHTML = `
+        <div class="overflow-x-auto">
           <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
             <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
               <tr>
-                <th class="px-4 py-3">품목코드</th>
-                <th class="px-4 py-3">품목명</th>
-                <th class="px-4 py-3">카테고리</th>
-                <th class="px-4 py-3">현재재고</th>
+                <th class="px-4 py-3">구분</th>
+                <th class="px-4 py-3">입고번호</th>
+                <th class="px-4 py-3">일자</th>
+                <th class="px-4 py-3">조제일자</th>
+                <th class="px-4 py-3">수량</th>
                 <th class="px-4 py-3">단위</th>
-                <th class="px-4 py-3">선택</th>
+                <th class="px-4 py-3">유통기한</th>
+                <th class="px-4 py-3">비고</th>
               </tr>
             </thead>
             <tbody>
-        `;
+      `;
 
-        filteredItems.forEach(item => {
-          const currentStock = stockMap[item.code] || 0;
+      if (history.length === 0) {
+        tableHTML += `
+          <tr>
+            <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+              입출고 이력이 없습니다.
+            </td>
+          </tr>
+        `;
+      } else {
+        history.forEach(item => {
+          const isInbound = item.inbound_no && !item.io_type;
+          const isOutbound = item.io_type === 'OUT';
+          const typeText = isInbound ? '입고' : '출고';
+          const typeClass = isInbound
+            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+            : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+
+          const date = isInbound
+            ? (item.inbound_date ? new Date(item.inbound_date).toISOString().split('T')[0] : '')
+            : (item.io_date ? new Date(item.io_date).toISOString().split('T')[0] : '');
+
+          const prepDate = item.preparation_date
+            ? new Date(item.preparation_date).toISOString().split('T')[0]
+            : '';
+
+          const expiryDate = item.expiry_date
+            ? new Date(item.expiry_date).toISOString().split('T')[0]
+            : '';
+
+          const quantity = Number(item.quantity) || 0;
+          const quantityClass = isInbound ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400';
+
           tableHTML += `
             <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-              <td class="px-4 py-3">${item.code || ''}</td>
-              <td class="px-4 py-3">${item.name || ''}</td>
-              <td class="px-4 py-3">${item.category || ''}</td>
-              <td class="px-4 py-3 text-right font-semibold ${currentStock > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}">${currentStock.toFixed(2)}</td>
-              <td class="px-4 py-3">${item.unit || ''}</td>
               <td class="px-4 py-3">
-                <button class="select-item px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                        data-code="${item.code}"
-                        data-name="${item.name}"
-                        data-unit="${item.unit}"
-                        data-current-stock="${currentStock}">
-                  선택
-                </button>
+                <span class="px-2 py-1 text-xs font-medium rounded ${typeClass}">
+                  ${typeText}
+                </span>
               </td>
+              <td class="px-4 py-3">${item.inbound_no || '-'}</td>
+              <td class="px-4 py-3">${date}</td>
+              <td class="px-4 py-3">${prepDate || '-'}</td>
+              <td class="px-4 py-3 text-right font-semibold ${quantityClass}">
+                ${isInbound ? '+' : '-'}${quantity.toLocaleString()}
+              </td>
+              <td class="px-4 py-3">${item.unit || ''}</td>
+              <td class="px-4 py-3">${expiryDate || '-'}</td>
+              <td class="px-4 py-3">${item.remark || '-'}</td>
             </tr>
           `;
         });
+      }
 
-        tableHTML += '</tbody></table>';
-        return tableHTML;
-      };
+      tableHTML += '</tbody></table></div>';
 
-      // 초기 테이블 표시
-      document.getElementById('itemTableContainer').innerHTML = renderTable(items);
-
-      // 필터 이벤트 등록
-      const filterInput = document.getElementById('itemNameFilter');
-      filterInput.addEventListener('input', (e) => {
-        const filterText = e.target.value.toLowerCase();
-        const filteredItems = items.filter(item => {
-          const itemName = (item.name || '').toLowerCase();
-          return itemName.includes(filterText);
-        });
-        document.getElementById('itemTableContainer').innerHTML = renderTable(filteredItems);
-
-        // 필터링 후 선택 버튼 이벤트 재등록
-        attachSelectButtons();
-      });
-
-      // 선택 버튼 이벤트 등록 함수
-      const attachSelectButtons = () => {
-        document.querySelectorAll('.select-item').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            const code = e.target.dataset.code;
-            const name = e.target.dataset.name;
-            const unit = e.target.dataset.unit;
-            const currentStock = e.target.dataset.currentStock;
-
-            // 셀에 값 설정
-            cell.setValue(code);
-
-            // 같은 행의 다른 필드도 채우기
-            const row = cell.getRow();
-            if (name) {
-              row.getCell('stock_name').setValue(name);
-            }
-            if (unit) {
-              row.getCell('unit').setValue(unit);
-            }
-
-            closeModal();
-          });
-        });
-      };
-
-      // 초기 선택 버튼 이벤트 등록
-      attachSelectButtons();
+      // 테이블 표시
+      document.getElementById('stockHistoryTableContainer').innerHTML = tableHTML;
 
     } catch (error) {
-      console.error('품목 목록 조회 실패:', error);
-      document.getElementById('itemTableContainer').innerHTML = `
-        <div class="text-center py-4 text-red-600 dark:text-red-400">
-          품목 목록을 불러오는데 실패했습니다.
+      console.error('재고 이력 조회 실패:', error);
+      document.getElementById('stockHistoryTableContainer').innerHTML = `
+        <div class="text-center py-8">
+          <div class="text-red-600 dark:text-red-400 mb-4">
+            <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="font-semibold">재고 이력을 불러오는데 실패했습니다.</p>
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 p-4 rounded">
+            <p class="mb-2"><strong>에러 내용:</strong></p>
+            <p class="text-left font-mono text-xs">${error.message}</p>
+            <p class="mt-4 text-yellow-600 dark:text-yellow-400">
+              ⚠️ 백엔드 API가 아직 구현되지 않았을 수 있습니다.
+            </p>
+            <p class="mt-2 text-left">
+              <strong>필요한 API:</strong><br/>
+              <code class="bg-white dark:bg-gray-800 px-2 py-1 rounded">GET /api/real-stock/history/${stockCode}</code>
+            </p>
+          </div>
         </div>
       `;
     }

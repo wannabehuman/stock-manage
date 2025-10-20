@@ -4,8 +4,8 @@ import { CodesTable2 } from './codesTable2.js';
 export class CodesTable extends CommonTable {
   constructor() {
     super();
-    // console.log('CodesTable constructor called');
-
+    console.log('CodesTable constructor called');
+    this.codesTable2 = null;
     // 테이블 필드 설정
     const tableFields = [
       { field: "grp_code", title: "그룹코드", width: 120, editor: "input",
@@ -21,7 +21,7 @@ export class CodesTable extends CommonTable {
         }
       },
       { field: "sort_order", title: "순서", width: 70, editor: "number", hozAlign: "right" },
-      { field: "Del_Check", title: "삭제", frozen: true, width: 60,
+      { field: "Del_Check", title: "삭제", frozen: true, width: 70,
         formatter: (cell) => {
           return '🗑️';
         }
@@ -29,9 +29,9 @@ export class CodesTable extends CommonTable {
     ];
 
     // 테이블 설정
-    // console.log('Setting table fields:', tableFields);
+    console.log('Setting table fields:', tableFields);
     this.setFields(tableFields);
-    // console.log('Setting table selector: codesTable');
+    console.log('Setting table selector: codesTable');
     this.setTbSelectorId('codesTable');
     this.setUniCD(['grp_code']); // 고유키 설정
     this.setTableName('코드그룹');
@@ -39,21 +39,19 @@ export class CodesTable extends CommonTable {
     this.setCtbSetting({
       selectableRows: 1,
       selectable: true,
-    })
-    this.codesTable2 = new CodesTable2();
-    this.codesTable2.init();
-    
-    // console.log('Table configuration completed');
+    });
 
     // AJAX 설정
     this.setAjaxUrl('/api/code-group');
-    
+
     // 필터 셀렉터 설정
     this.setFilterSelector('[data-filter]');
-
-    // 소분류 테이블 연결
+    this.codesTable2 = new CodesTable2();
+    this.codesTable2.init();
+    console.log('Creating CodesTable2');
     this.setLinkedTables([this.codesTable2]);
   }
+
 
   // 기본 데이터 생성
   getDefaultRowData() {

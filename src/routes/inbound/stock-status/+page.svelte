@@ -1,23 +1,23 @@
 <script>
   import { Card, Breadcrumb, BreadcrumbItem, Button } from 'flowbite-svelte';
-  import { HomeSolid, MailBoxSolid, GridSolid } from 'flowbite-svelte-icons';
+  import { HomeSolid, MailBoxSolid, ChartPieSolid } from 'flowbite-svelte-icons';
   import { onMount, onDestroy } from 'svelte';
-  import { OutboundHistoryTable } from './outboundHistoryTable.js';
-  import { SearchForm, ItemCdInput, ItemNmInput, MonthInput } from '../../../lib/components/forms';
+  import { StockStatusTable } from './stockStatusTable.js';
+  import { SearchForm, ItemCdInput, ItemNmInput, ItemGrpInput } from '../../../lib/components/forms';
   import { SingleTon } from '../../../lib/components/commonTabulator/singleTon.js';
 
   // 테이블 인스턴스
-  let outboundHistoryTable;
+  let stockStatusTable;
   const single = SingleTon.getInstance();
 
   onMount(() => {
-    // 출고이력 테이블 초기화
+    // 재고현황 테이블 초기화
     setTimeout(() => {
       try {
-        console.log('Initializing OutboundHistoryTable...');
-        outboundHistoryTable = new OutboundHistoryTable();
+        console.log('Initializing StockStatusTable...');
+        stockStatusTable = new StockStatusTable();
         console.log('Calling init...');
-        outboundHistoryTable.init();
+        stockStatusTable.init();
         console.log('Table initialization completed');
       } catch (error) {
         console.error('Error initializing table:', error);
@@ -33,13 +33,7 @@
 </script>
 
 <svelte:head>
-  <title>출고이력조회 - 재고관리시스템</title>
-  <style>
-    .tabulator-row .tabulator-cell {
-      border-right: 1px solid #ccc;
-      border-bottom: 1px solid #ccc;
-    }
-  </style>
+  <title>재고현황 - 재고관리시스템</title>
 </svelte:head>
 
 <div class="h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
@@ -52,16 +46,16 @@
         홈
       </div>
     </BreadcrumbItem>
-    <BreadcrumbItem href="/outbound" class="whitespace-nowrap">
+    <BreadcrumbItem href="/inbound" class="whitespace-nowrap">
       <div class="flex items-center">
         <MailBoxSolid class="w-4 h-4 mr-2 flex-shrink-0" />
-        출고관리
+        입고관리
       </div>
     </BreadcrumbItem>
     <BreadcrumbItem class="whitespace-nowrap">
       <div class="flex items-center">
-        <GridSolid class="w-4 h-4 mr-2 flex-shrink-0" />
-        출고이력조회
+        <ChartPieSolid class="w-4 h-4 mr-2 flex-shrink-0" />
+        재고현황
       </div>
     </BreadcrumbItem>
   </Breadcrumb>
@@ -72,38 +66,42 @@
 <SearchForm
   title="검색 조건"
   columns={3}
-  onSearch={() => outboundHistoryTable?.search()}
+  onSearch={() => stockStatusTable?.search()}
 >
-  <MonthInput
-    label="조회년월"
-    value={outboundHistoryTable?.getSearchData()?.month || ''}
-    onInput={(e) => outboundHistoryTable?.updateSearchData('month', e.target.value)}
+  <ItemGrpInput
+    value={stockStatusTable?.getSearchData()?.itemGrpCode || ''}
+    onInput={(e) => stockStatusTable?.updateSearchData('itemGrpCode', e.target.value)}
   />
   <ItemCdInput
-    value={outboundHistoryTable?.getSearchData()?.itemCode || ''}
-    onInput={(e) => outboundHistoryTable?.updateSearchData('itemCode', e.target.value)}
+    value={stockStatusTable?.getSearchData()?.itemCode || ''}
+    onInput={(e) => stockStatusTable?.updateSearchData('itemCode', e.target.value)}
+    onSearch={() => stockStatusTable?.openSearchItemModal()}
   />
   <ItemNmInput
-    value={outboundHistoryTable?.getSearchData()?.itemName || ''}
-    onInput={(e) => outboundHistoryTable?.updateSearchData('itemName', e.target.value)}
+    value={stockStatusTable?.getSearchData()?.itemName || ''}
+    onInput={(e) => stockStatusTable?.updateSearchData('itemName', e.target.value)}
+    onSearch={() => stockStatusTable?.openSearchItemModal()}
   />
 
   <svelte:fragment slot="buttons">
-    <Button color="blue" on:click={() => outboundHistoryTable?.search()}>
+    <!-- <Button color="blue" on:click={() => stockStatusTable?.search()}>
       🔍
       조회
-    </Button>
+    </Button> -->
   </svelte:fragment>
 </SearchForm>
 </div>
 
-<!-- 출고이력 테이블 -->
+<!-- 재고현황 테이블 -->
 <Card class="p-3 w-full max-w-full flex-1 flex flex-col">
   <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-3 flex-shrink-0">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">출고이력조회</h2>
+    <div>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">재고현황</h2>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        💡 이력 컬럼의 📋 아이콘을 클릭하면 해당 품목의 입출고 이력을 확인할 수 있습니다.
+      </p>
+    </div>
   </div>
-  <div class="my-tabulator" style="height: 100%;">
-    <div id="outboundHistoryTable" class="w-full flex-1 min-h-0"></div>
-  </div>
+  <div id="stockStatusTable" class="w-full flex-1 min-h-0 overflow-x-auto"></div>
 </Card>
 </div>

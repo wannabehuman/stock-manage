@@ -338,3 +338,10 @@
   background-color: rgb(55 65 81) !important; /* gray-700 */
   border-right-color: rgb(75 85 99) !important; /* gray-600 */
 }
+
+.my-tabulator * {
+  /* box-sizing: border-box; */
+  border-style: initial;
+  /* border-width: initial; */
+  /* border-color: initial; */
+}

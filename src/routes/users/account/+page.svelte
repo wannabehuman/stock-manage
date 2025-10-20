@@ -1,14 +1,14 @@
 <script>
   import { Card, Breadcrumb, BreadcrumbItem, Label, Input, Button, Modal, Avatar, Fileupload } from 'flowbite-svelte';
-  import { HomeSolid, UserSolid, LockSolid, CameraSolid } from 'flowbite-svelte-icons';
+  import { HomeSolid, UserSolid, LockSolid} from 'flowbite-svelte-icons';
   import { onMount } from 'svelte';
 
   // 현재 사용자 정보
   let userInfo = {
-    name: "김관리자",
-    email: "admin@stockmanage.com",
-    birthDate: "1989-03-15",
-    avatar: "https://flowbite.com/docs/images/people/profile-picture-5.jpg"
+    name: "",
+    email: "",
+    // birthDate: "1989-03-15",
+    avatar: ""
   };
 
   // 비밀번호 변경용 데이터
@@ -29,8 +29,9 @@
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        userInfo.name = user.username || "김관리자";
-
+        userInfo.name = user.name || "김관리자";
+        userInfo.email = user.email || "admin@stockmanage.com";
+        // userInfo.birthDate = user.birthDate || "1989-03-15";
         // 저장된 아바타가 있으면 불러오기
         const savedAvatar = localStorage.getItem('userAvatar');
         if (savedAvatar) {
@@ -46,7 +47,7 @@
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        user.username = userInfo.name;
+        user.name = userInfo.name;
         localStorage.setItem('user', JSON.stringify(user));
       }
     }
@@ -65,7 +66,7 @@
     passwordData.confirmPassword = "";
   }
 
-  function updatePassword() {
+  async function updatePassword() {
     // 비밀번호 확인
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert("새 비밀번호가 일치하지 않습니다.");
@@ -77,8 +78,46 @@
       return;
     }
 
-    alert("비밀번호가 성공적으로 변경되었습니다.");
-    closePasswordModal();
+    if (passwordData.newPassword.length < 6) {
+      alert("새 비밀번호는 6자 이상이어야 합니다.");
+      return;
+    }
+
+    try {
+      // 현재 로그인한 사용자 정보 가져오기
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
+        return;
+      }
+      const user = JSON.parse(userStr);
+
+      // 백엔드 API 호출
+      const response = await fetch('/api/users/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        },
+        body: JSON.stringify({
+          userId: user.id || user.username,
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert("비밀번호가 성공적으로 변경되었습니다.");
+        closePasswordModal();
+      } else {
+        alert(result.message || "비밀번호 변경에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error('Password change error:', error);
+      alert("비밀번호 변경 중 오류가 발생했습니다.");
+    }
   }
 
   function openAvatarModal() {
@@ -176,7 +215,7 @@
           class="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2 shadow-lg transition-all"
           title="프로필 사진 변경"
         >
-          <CameraSolid class="w-4 h-4" />
+          <!-- <CameraSolid class="w-4 h-4" /> -->
         </button>
       </div>
     </div>
@@ -198,16 +237,6 @@
           type="email"
           bind:value={userInfo.email} 
           placeholder="이메일을 입력하세요"
-        />
-      </div>
-      
-      <div>
-        <Label for="birthDate" class="mb-2">생년월일</Label>
-        <Input 
-          id="birthDate" 
-          type="date"
-          bind:value={userInfo.birthDate} 
-          placeholder="생년월일을 선택하세요"
         />
       </div>
     </div>
