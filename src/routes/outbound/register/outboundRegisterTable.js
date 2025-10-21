@@ -1,4 +1,5 @@
 import { CommonTable } from '../../../lib/components/commonTabulator/commonTable.js';
+import { createCodeEditor, createCodeFormatter } from '../../../lib/components/commonTabulator/codeEditor.js';
 
 // 입고등록 테이블 클래스 (CommonTable 상속)
 export class OutboundRegisterTable extends CommonTable {
@@ -66,7 +67,11 @@ export class OutboundRegisterTable extends CommonTable {
           return Math.floor(Number(value)).toLocaleString();
         }
       },
-      { field: "unit", title: "단위", width: 80, editor: "input" },
+      { field: "unit", title: "단위", width: 100,
+        editor: createCodeEditor('UNIT'),
+        formatter: createCodeFormatter('UNIT'),
+        validation: [{ type: 'required' }]
+      },
       { field: "remark", title: "비고", width: 200, editor: "input" },
       { field: "Del_Check", title: "삭제", frozen: true, width: 70,
         formatter: (cell) => {
@@ -162,13 +167,20 @@ export class OutboundRegisterTable extends CommonTable {
                   </svg>
                 </button>
               </div>
-              <div class="mb-4">
+              <div class="mb-4 flex gap-2 justify-between items-center">
                 <input
                   type="text"
                   id="searchItemNameFilter"
                   placeholder="품명으로 검색..."
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+                <button
+                  id="resetSearchFilter"
+                  type="button"
+                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                >
+                  초기화
+                </button>
               </div>
               <div id="searchItemTableContainer" style="height: 400px; overflow: auto;">
                 <div class="text-center py-4">
@@ -235,7 +247,9 @@ export class OutboundRegisterTable extends CommonTable {
 
         filteredItems.forEach(item => {
           tableHTML += `
-            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer search-item-row"
+                data-code="${item.code}"
+                data-name="${item.name}">
               <td class="px-4 py-3">${item.code || ''}</td>
               <td class="px-4 py-3">${item.name || ''}</td>
               <td class="px-4 py-3">${item.category || ''}</td>
@@ -258,41 +272,63 @@ export class OutboundRegisterTable extends CommonTable {
       // 초기 테이블 표시
       document.getElementById('searchItemTableContainer').innerHTML = renderTable(items);
 
-      // 필터 이벤트 등록
-      const filterInput = document.getElementById('searchItemNameFilter');
-      filterInput.addEventListener('input', (e) => {
-        const filterText = e.target.value.toLowerCase();
-        const filteredItems = items.filter(item => {
-          const itemName = (item.name || '').toLowerCase();
-          return itemName.includes(filterText);
-        });
-        document.getElementById('searchItemTableContainer').innerHTML = renderTable(filteredItems);
+      // 품목 선택 처리 함수
+      const selectItem = (code, name) => {
+        this.updateSearchData('itemCode', code);
+        this.updateSearchData('itemName', name);
+        const itemCodeInput = document.querySelector('[data-name="ITEM_CD"]');
+        const itemNameInput = document.querySelector('[data-name="ITEM_NM"]');
+        if (itemCodeInput) itemCodeInput.value = code;
+        if (itemNameInput) itemNameInput.value = name;
+        closeModal();
+      };
 
-        // 필터링 후 선택 버튼 이벤트 재등록
-        attachSelectButtons();
-      });
-
-      // 선택 버튼 이벤트 등록 함수
+      // 선택 버튼 및 행 더블클릭 이벤트 등록 함수
       const attachSelectButtons = () => {
         document.querySelectorAll('.select-search-item').forEach(btn => {
           btn.addEventListener('click', (e) => {
-            const code = e.target.dataset.code;
-            const name = e.target.dataset.name;
-
-            // 검색 데이터에 설정
-            this.updateSearchData('itemCode', code);
-            this.updateSearchData('itemName', name);
-
-            // 입력 필드에 값 표시
-            const itemCodeInput = document.querySelector('[data-name="ITEM_CD"]');
-            const itemNameInput = document.querySelector('[data-name="ITEM_NM"]');
-            if (itemCodeInput) itemCodeInput.value = code;
-            if (itemNameInput) itemNameInput.value = name;
-
-            closeModal();
+            e.stopPropagation();
+            selectItem(e.target.dataset.code, e.target.dataset.name);
+          });
+        });
+        document.querySelectorAll('.search-item-row').forEach(row => {
+          row.addEventListener('dblclick', (e) => {
+            selectItem(e.currentTarget.dataset.code, e.currentTarget.dataset.name);
           });
         });
       };
+
+      // 필터링 함수
+      const filterItems = (filterText) => {
+        const filteredItems = items.filter(item => {
+          return (item.name || '').toLowerCase().includes(filterText);
+        });
+        document.getElementById('searchItemTableContainer').innerHTML = renderTable(filteredItems);
+        attachSelectButtons();
+      };
+
+      // 필터 이벤트 등록
+      const filterInput = document.getElementById('searchItemNameFilter');
+      if (filterInput) {
+        filterInput.addEventListener('input', (e) => {
+          filterItems(e.target.value.toLowerCase());
+        });
+      }
+
+      // 초기화 버튼 이벤트 등록
+      const resetButton = document.getElementById('resetSearchFilter');
+      if (resetButton) {
+        resetButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.updateSearchData('itemCode', '');
+          this.updateSearchData('itemName', '');
+          const itemCodeInput = document.querySelector('[data-name="ITEM_CD"]');
+          const itemNameInput = document.querySelector('[data-name="ITEM_NM"]');
+          if (itemCodeInput) itemCodeInput.value = '';
+          if (itemNameInput) itemNameInput.value = '';
+          closeModal();
+        });
+      }
 
       // 초기 선택 버튼 이벤트 등록
       attachSelectButtons();

@@ -39,7 +39,7 @@
   <Breadcrumb class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg w-full">
     <BreadcrumbItem href="/" home class="whitespace-nowrap">
       <div class="flex items-center">
-        <HomeSolid class="w-4 h-4 mr-2 flex-shrink-0" />
+        <!-- <HomeSolid class="w-4 h-4 mr-2 flex-shrink-0" /> -->
         홈
       </div>
     </BreadcrumbItem>

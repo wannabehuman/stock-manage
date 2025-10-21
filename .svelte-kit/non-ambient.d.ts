@@ -27,7 +27,7 @@ export {};
 
 declare module "$app/types" {
 	export interface AppTypes {
-		RouteId(): "/" | "/api" | "/api/auth" | "/api/auth/change-password" | "/api/auth/login" | "/api/auth/register" | "/inbound" | "/inbound/current" | "/inbound/daily" | "/inbound/history" | "/inbound/register" | "/inbound/stock-status" | "/login" | "/logout" | "/master" | "/master/codes" | "/master/items" | "/modal-examples" | "/outbound" | "/outbound/history" | "/outbound/register" | "/system" | "/system/users" | "/users" | "/users/account" | "/users/approval" | "/users/management" | "/users/notifications";
+		RouteId(): "/" | "/api" | "/api/auth" | "/api/auth/change-password" | "/api/auth/login" | "/api/auth/register" | "/history" | "/history/all" | "/inbound" | "/inbound/current" | "/inbound/daily" | "/inbound/history" | "/inbound/register" | "/inbound/stock-status" | "/login" | "/logout" | "/master" | "/master/codes" | "/master/items" | "/modal-examples" | "/outbound" | "/outbound/history" | "/outbound/register" | "/system" | "/system/users" | "/users" | "/users/account" | "/users/approval" | "/users/management" | "/users/notifications";
 		RouteParams(): {
 			
 		};
@@ -38,6 +38,8 @@ declare module "$app/types" {
 			"/api/auth/change-password": Record<string, never>;
 			"/api/auth/login": Record<string, never>;
 			"/api/auth/register": Record<string, never>;
+			"/history": Record<string, never>;
+			"/history/all": Record<string, never>;
 			"/inbound": Record<string, never>;
 			"/inbound/current": Record<string, never>;
 			"/inbound/daily": Record<string, never>;
@@ -61,8 +63,8 @@ declare module "$app/types" {
 			"/users/management": Record<string, never>;
 			"/users/notifications": Record<string, never>
 		};
-		Pathname(): "/" | "/api" | "/api/" | "/api/auth" | "/api/auth/" | "/api/auth/change-password" | "/api/auth/change-password/" | "/api/auth/login" | "/api/auth/login/" | "/api/auth/register" | "/api/auth/register/" | "/inbound" | "/inbound/" | "/inbound/current" | "/inbound/current/" | "/inbound/daily" | "/inbound/daily/" | "/inbound/history" | "/inbound/history/" | "/inbound/register" | "/inbound/register/" | "/inbound/stock-status" | "/inbound/stock-status/" | "/login" | "/login/" | "/logout" | "/logout/" | "/master" | "/master/" | "/master/codes" | "/master/codes/" | "/master/items" | "/master/items/" | "/modal-examples" | "/modal-examples/" | "/outbound" | "/outbound/" | "/outbound/history" | "/outbound/history/" | "/outbound/register" | "/outbound/register/" | "/system" | "/system/" | "/system/users" | "/system/users/" | "/users" | "/users/" | "/users/account" | "/users/account/" | "/users/approval" | "/users/approval/" | "/users/management" | "/users/management/" | "/users/notifications" | "/users/notifications/";
+		Pathname(): "/" | "/api" | "/api/" | "/api/auth" | "/api/auth/" | "/api/auth/change-password" | "/api/auth/change-password/" | "/api/auth/login" | "/api/auth/login/" | "/api/auth/register" | "/api/auth/register/" | "/history" | "/history/" | "/history/all" | "/history/all/" | "/inbound" | "/inbound/" | "/inbound/current" | "/inbound/current/" | "/inbound/daily" | "/inbound/daily/" | "/inbound/history" | "/inbound/history/" | "/inbound/register" | "/inbound/register/" | "/inbound/stock-status" | "/inbound/stock-status/" | "/login" | "/login/" | "/logout" | "/logout/" | "/master" | "/master/" | "/master/codes" | "/master/codes/" | "/master/items" | "/master/items/" | "/modal-examples" | "/modal-examples/" | "/outbound" | "/outbound/" | "/outbound/history" | "/outbound/history/" | "/outbound/register" | "/outbound/register/" | "/system" | "/system/" | "/system/users" | "/system/users/" | "/users" | "/users/" | "/users/account" | "/users/account/" | "/users/approval" | "/users/approval/" | "/users/management" | "/users/management/" | "/users/notifications" | "/users/notifications/";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
-		Asset(): string & {};
+		Asset(): "/images/boyack.png" | string & {};
 	}
 }

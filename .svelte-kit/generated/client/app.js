@@ -18,28 +18,30 @@ export const nodes = [
 	() => import('./nodes/14'),
 	() => import('./nodes/15'),
 	() => import('./nodes/16'),
-	() => import('./nodes/17')
+	() => import('./nodes/17'),
+	() => import('./nodes/18')
 ];
 
 export const server_loads = [];
 
 export const dictionary = {
 		"/": [2],
-		"/inbound/current": [3],
-		"/inbound/history": [4],
-		"/inbound/register": [5],
-		"/inbound/stock-status": [6],
-		"/login": [7],
-		"/logout": [8],
-		"/master/codes": [9],
-		"/master/items": [10],
-		"/modal-examples": [11],
-		"/outbound/history": [12],
-		"/outbound/register": [13],
-		"/system/users": [14],
-		"/users/account": [15],
-		"/users/approval": [16],
-		"/users/management": [17]
+		"/history/all": [3],
+		"/inbound/current": [4],
+		"/inbound/history": [5],
+		"/inbound/register": [6],
+		"/inbound/stock-status": [7],
+		"/login": [8],
+		"/logout": [9],
+		"/master/codes": [10],
+		"/master/items": [11],
+		"/modal-examples": [12],
+		"/outbound/history": [13],
+		"/outbound/register": [14],
+		"/system/users": [15],
+		"/users/account": [16],
+		"/users/approval": [17],
+		"/users/management": [18]
 	};
 
 export const hooks = {

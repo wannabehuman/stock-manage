@@ -1,4 +1,5 @@
 import { CommonTable } from '../../../lib/components/commonTabulator/commonTable.js';
+import { createCodeFormatter, fetchCodeData } from '../../../lib/components/commonTabulator/codeEditor.js';
 
 // 재고현황 테이블 클래스
 export class StockStatusTable extends CommonTable {
@@ -16,8 +17,12 @@ export class StockStatusTable extends CommonTable {
     const tableFields = [
       { field: "stock_code", title: "품목코드", width: 150, frozen: true },
       { field: "stock_name", title: "품목명", width: 200, frozen: true },
-      { field: "category", title: "카테고리", width: 150 },
-      { field: "unit", title: "단위", width: 100, hozAlign: "center" },
+      { field: "category", title: "카테고리", width: 150,
+        formatter: createCodeFormatter('HERBER_KIND')
+      },
+      { field: "unit", title: "단위", width: 100, hozAlign: "center",
+        formatter: createCodeFormatter('UNIT')
+      },
       { field: "current_quantity", title: "현재고", width: 120, hozAlign: "right",
         formatter: (cell) => {
           const value = cell.getValue();
@@ -263,33 +268,31 @@ export class StockStatusTable extends CommonTable {
     const stockCode = stockData.stock_code;
     const stockName = stockData.stock_name;
 
-    // 모달 HTML 생성
+    // 모달 HTML 생성 (고정 크기: 1200px x 700px)
     const modalHTML = `
-      <div id="stockHistoryModal" class="fixed inset-0 z-50 overflow-y-auto" style="background-color: rgba(0,0,0,0.5);">
-        <div class="flex items-center justify-center min-h-screen p-4">
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-              <div class="flex justify-between items-center">
-                <div>
-                  <h3 class="text-xl font-semibold text-gray-900 dark:text-white">재고 입출고 이력</h3>
-                  <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    품목코드: ${stockCode} | 품목명: ${stockName}
-                  </p>
-                </div>
-                <button id="closeStockHistoryModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                  </svg>
-                </button>
+      <div id="stockHistoryModal" class="fixed inset-0 z-50 flex items-center justify-center" style="background-color: rgba(0,0,0,0.5);">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl" style="width: 1200px; height: 700px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
+          <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">재고 입출고 이력 (전체)</h3>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  품목코드: ${stockCode} | 품목명: ${stockName}
+                </p>
               </div>
+              <button id="closeStockHistoryModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
             </div>
+          </div>
 
-            <div class="flex-1 overflow-auto p-6">
-              <div id="stockHistoryTableContainer">
-                <div class="text-center py-8">
-                  <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-                  <p class="mt-2 text-gray-600 dark:text-gray-400">이력을 불러오는 중...</p>
-                </div>
+          <div class="flex-1 overflow-auto p-6" style="min-height: 0;">
+            <div id="stockHistoryTableContainer">
+              <div class="text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">이력을 불러오는 중...</p>
               </div>
             </div>
           </div>
@@ -316,6 +319,13 @@ export class StockStatusTable extends CommonTable {
     });
 
     try {
+      // 단위 코드 데이터 가져오기
+      const unitCodes = await fetchCodeData('UNIT');
+      const unitMap = {};
+      unitCodes.forEach(code => {
+        unitMap[code.code] = code.code_name;
+      });
+
       // 입출고 이력 가져오기
       const response = await fetch(`/api/real-stock/history/${stockCode}`, {
         method: 'GET',
@@ -326,7 +336,8 @@ export class StockStatusTable extends CommonTable {
         throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
       }
 
-      const history = await response.json();
+      const data = await response.json();
+      const history = data.history || [];
 
       // 날짜 기준 최신순 정렬
       history.sort((a, b) => {
@@ -364,16 +375,17 @@ export class StockStatusTable extends CommonTable {
         `;
       } else {
         history.forEach(item => {
-          const isInbound = item.inbound_no && !item.io_type;
-          const isOutbound = item.io_type === 'OUT';
+          // 백엔드 응답: io_type = 'IN' (입고) 또는 'OUT' (출고)
+          const isInbound = item.io_type === 'IN';
           const typeText = isInbound ? '입고' : '출고';
           const typeClass = isInbound
             ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
             : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
 
-          const date = isInbound
-            ? (item.inbound_date ? new Date(item.inbound_date).toISOString().split('T')[0] : '')
-            : (item.io_date ? new Date(item.io_date).toISOString().split('T')[0] : '');
+          // 날짜: io_date 우선, 없으면 inbound_date 사용
+          const date = item.io_date
+            ? new Date(item.io_date).toISOString().split('T')[0]
+            : (item.inbound_date ? new Date(item.inbound_date).toISOString().split('T')[0] : '');
 
           const prepDate = item.preparation_date
             ? new Date(item.preparation_date).toISOString().split('T')[0]
@@ -399,7 +411,7 @@ export class StockStatusTable extends CommonTable {
               <td class="px-4 py-3 text-right font-semibold ${quantityClass}">
                 ${isInbound ? '+' : '-'}${quantity.toLocaleString()}
               </td>
-              <td class="px-4 py-3">${item.unit || ''}</td>
+              <td class="px-4 py-3">${unitMap[item.unit] || item.unit || ''}</td>
               <td class="px-4 py-3">${expiryDate || '-'}</td>
               <td class="px-4 py-3">${item.remark || '-'}</td>
             </tr>

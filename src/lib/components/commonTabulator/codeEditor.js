@@ -11,7 +11,7 @@ const codeCache = {};
  * @param {string} grpCode - 그룹코드 (예: HERBAR_KIND, UNIT)
  * @returns {Promise<Array>} 코드 목록
  */
-async function fetchCodeData(grpCode) {
+export async function fetchCodeData(grpCode) {
   // 캐시에 있으면 캐시 반환
   if (codeCache[grpCode]) {
     return codeCache[grpCode];

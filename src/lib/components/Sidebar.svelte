@@ -1,6 +1,6 @@
 <script>
   import { Sidebar, SidebarGroup, SidebarItem, SidebarWrapper, Avatar, Badge, DarkMode } from 'flowbite-svelte';
-  import { ChartPieSolid, GridSolid, MailBoxSolid, UserSolid, UsersGroupSolid, ArrowRightToBracketOutline, CogSolid, BellSolid, ChevronDownOutline, ChevronRightOutline, DatabaseSolid, SearchSolid, ClipboardListSolid, AngleLeftOutline } from 'flowbite-svelte-icons';
+  import { ChartPieSolid, GridSolid, MailBoxSolid, UserSolid, UsersGroupSolid, ArrowRightToBracketOutline, CogSolid, BellSolid, ChevronDownOutline, ChevronRightOutline, DatabaseSolid, SearchSolid, ClipboardListSolid, AngleLeftOutline, FileChartBarSolid } from 'flowbite-svelte-icons';
   import { page } from '$app/stores';
   import { slide } from 'svelte/transition';
   
@@ -297,6 +297,20 @@
       </a>
       {/if}
     </div>
+
+    <!-- 입출고내역 (전체보기) -->
+    {#if isOpen}
+    <SidebarItem label="입출고내역" href="/history/all" class="mb-1 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 {$page.url.pathname === '/history/all' ? 'bg-indigo-100 dark:bg-gray-700 border-r-4 border-indigo-500' : ''}">
+      <svelte:fragment slot="icon">
+        <FileChartBarSolid class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+      </svelte:fragment>
+    </SidebarItem>
+    {:else}
+    <a href="/history/all" class="flex items-center justify-center mb-1 p-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all {$page.url.pathname === '/history/all' ? 'bg-indigo-100 dark:bg-gray-700' : ''}" title="입출고내역">
+      <FileChartBarSolid class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+    </a>
+    {/if}
+
     <!-- 사용자관리 -->
     <div class="mb-1">
       {#if isOpen}

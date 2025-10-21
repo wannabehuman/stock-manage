@@ -5,6 +5,7 @@ build/
 .svelte-kit/
 .env
 .env.*
+deploy.sh
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*

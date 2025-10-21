@@ -23,10 +23,10 @@
     }
   });
 
-  // 최근 입출고 30건으로 변경
+  // 최근 입출고 5건만 표시 (전체보기는 별도 메뉴에서)
   async function loadRecentTransactions() {
     try {
-      const response = await fetch('/api/dashboard/recent-transactions?limit=30');
+      const response = await fetch('/api/dashboard/recent-transactions?limit=5');
       if (response.ok) {
         const data = await response.json();
         if (dashboardData) {
@@ -44,26 +44,34 @@
       title: '전체 재고',
       value: Number(dashboardData.summary?.total_quantity || 0).toLocaleString(),
       icon: ShoppingBagSolid,
-      color: 'blue'
+      color: 'blue',
+      link: '/inbound/stock-status',
+      description: '재고현황 보기'
     },
     {
       title: '유통기한 임박',
       value: dashboardData.expiring?.length || 0,
       icon: ClockSolid,
-      color: 'orange'
+      color: 'orange',
+      link: '/outbound/register',
+      description: '출고등록 하기'
     },
     {
       title: '재고 부족',
       value: dashboardData.lowStock?.length || 0,
       icon: ExclamationCircleSolid,
-      color: 'red'
+      color: 'red',
+      link: '/inbound/register',
+      description: '입고등록 하기'
     },
-    {
-      title: '전체 품목수',
-      value: dashboardData.summary?.active_items || 0,
-      icon: TruckSolid,
-      color: 'green'
-    }
+    // {
+    //   title: '전체 품목수',
+    //   value: dashboardData.summary?.active_items || 0,
+    //   icon: TruckSolid,
+    //   color: 'green',
+    //   link: '/master/items',
+    //   description: '품목관리 보기'
+    // }
   ] : [];
 
   function getDaysLeftColor(days) {
@@ -103,7 +111,7 @@
   <Breadcrumb class="breadcrumb-responsive">
     <BreadcrumbItem href="/" home class="whitespace-nowrap">
       <div class="flex items-center">
-        <HomeSolid class="w-4 h-4 mr-2 flex-shrink-0" />
+        <!-- <HomeSolid class="w-4 h-4 mr-2 flex-shrink-0" /> -->
         홈
       </div>
     </BreadcrumbItem>
@@ -128,24 +136,32 @@
   </div>
 {:else if dashboardData}
 <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 w-full">
-  <!-- 통계 카드들 (위쪽 4개) - 크기 축소 -->
+  <!-- 통계 카드들 (위쪽 4개) - 클릭 가능 -->
   {#each stats as stat, i}
     <div in:fly="{{ y: 20, duration: 500, delay: 150 + i * 100 }}">
-      <Card class="hover:shadow-lg transition-all duration-300 border-l-4 border-{stat.color}-500 p-4">
-        <div class="flex items-center justify-between">
-          <div class="flex-1">
-            <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide dark:text-gray-400 mb-1">
-              {stat.title}
-            </p>
-            <p class="text-xl font-bold text-gray-900 dark:text-white">
-              {stat.value}
-            </p>
-          </div>
-          <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-{stat.color}-100 to-{stat.color}-200 rounded-lg dark:from-{stat.color}-900 dark:to-{stat.color}-800">
-            <svelte:component this={stat.icon} class="w-6 h-6 text-{stat.color}-600 dark:text-{stat.color}-300" />
+      <a href={stat.link} class="block">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-xl transition-all duration-300 border-l-4 border-{stat.color}-500 p-4 cursor-pointer transform hover:scale-105">
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide dark:text-gray-400 mb-1">
+                {stat.title}
+              </p>
+              <p class="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                {stat.value}
+              </p>
+              <p class="text-xs text-{stat.color}-600 dark:text-{stat.color}-400 flex items-center">
+                {stat.description}
+                <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </p>
+            </div>
+            <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-{stat.color}-100 to-{stat.color}-200 rounded-lg dark:from-{stat.color}-900 dark:to-{stat.color}-800">
+              <svelte:component this={stat.icon} class="w-6 h-6 text-{stat.color}-600 dark:text-{stat.color}-300" />
+            </div>
           </div>
         </div>
-      </Card>
+      </a>
     </div>
   {/each}
 </div>
@@ -244,18 +260,27 @@
 <!-- 세 번째 행: 최근 입출고 내역 (전체 너비) -->
 <div class="w-full mt-4">
   <div in:fly="{{ y: 20, duration: 500, delay: 1000 }}">
-    <Card class="shadow-lg border-l-4 border-blue-500 p-4 h-[450px] flex flex-col" style="max-width:none;">
-      <div class="flex items-center justify-between mb-3 flex-shrink-0">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 border-blue-500 p-4">
+      <div class="flex items-center justify-between mb-3">
         <div>
           <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center">
             <TruckSolid class="w-4 h-4 text-blue-500 mr-2" />
             최근 입출고 내역
           </h3>
-          <p class="text-xs text-gray-500 dark:text-gray-400">최근 30건</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">최근 5건</p>
         </div>
+        <a
+          href="/history/all"
+          class="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
+        >
+          전체보기
+          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </a>
       </div>
 
-      <div class="overflow-x-auto overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500">
+      <div class="overflow-x-auto">
         <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
           <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
             <tr>
@@ -302,7 +327,7 @@
           </tbody>
         </table>
       </div>
-    </Card>
+    </div>
   </div>
 </div>
 {/if}

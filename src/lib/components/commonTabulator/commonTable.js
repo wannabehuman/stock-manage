@@ -139,8 +139,9 @@ export class CommonTable{
     this.putError         = (res)=>{};
     this.breakPoint       = false; // 쓰로틀링 사용시 변수
     this.setTable2SingleTon();
-    
+
     this.noEditList = []   // cell중에 rowSTATUS를 U로 바꾸고 싶지 않으면 추가할것
+    this.loadingOverlay = null; // 커스텀 로딩 오버레이
 
     this.setCellEvent();
     this.CommonRowEvent();
@@ -1071,6 +1072,100 @@ export class CommonTable{
 
   /**
    * @memberof CommonTable
+   * @method showLoadingOverlay
+   * @description 로딩 오버레이 표시
+   */
+  showLoadingOverlay() {
+    // 이미 오버레이가 있으면 제거
+    this.hideLoadingOverlay();
+
+    // 테이블 요소 찾기
+    const tableElement = this._tblList?.element;
+    if (!tableElement) return;
+
+    // 오버레이 HTML 생성
+    const overlay = document.createElement('div');
+    overlay.className = 'tabulator-loading-overlay';
+    overlay.innerHTML = `
+      <div class="loading-spinner-container">
+        <div class="loading-spinner">
+          <svg class="animate-spin h-12 w-12 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+        <p class="loading-text">데이터를 불러오는 중...</p>
+      </div>
+    `;
+
+    // 스타일 추가
+    const style = document.createElement('style');
+    if (!document.getElementById('tabulator-loading-styles')) {
+      style.id = 'tabulator-loading-styles';
+      style.textContent = `
+        .tabulator-loading-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(255, 255, 255, 0.9);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          backdrop-filter: blur(2px);
+        }
+        .dark .tabulator-loading-overlay {
+          background: rgba(31, 41, 55, 0.9);
+        }
+        .loading-spinner-container {
+          text-align: center;
+        }
+        .loading-spinner {
+          margin: 0 auto 1rem;
+          display: flex;
+          justify-content: center;
+        }
+        .loading-text {
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #4B5563;
+          margin-top: 0.5rem;
+        }
+        .dark .loading-text {
+          color: #D1D5DB;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // 테이블의 부모 요소에 position: relative 추가
+    const tableParent = tableElement.parentElement;
+    if (tableParent) {
+      const currentPosition = window.getComputedStyle(tableParent).position;
+      if (currentPosition === 'static') {
+        tableParent.style.position = 'relative';
+      }
+      tableParent.appendChild(overlay);
+      this.loadingOverlay = overlay;
+    }
+  }
+
+  /**
+   * @memberof CommonTable
+   * @method hideLoadingOverlay
+   * @description 로딩 오버레이 숨기기
+   */
+  hideLoadingOverlay() {
+    if (this.loadingOverlay && this.loadingOverlay.parentNode) {
+      this.loadingOverlay.parentNode.removeChild(this.loadingOverlay);
+      this.loadingOverlay = null;
+    }
+  }
+
+  /**
+   * @memberof CommonTable
    * @method getMainList
    * @description 메인 테이블 조회
    * @returns {boolean} 조회 성공 여부
@@ -1118,10 +1213,10 @@ export class CommonTable{
     }
 
 
-    let talert = window.setTimeout(()=> { 
-      this._tblList.alert("Loading ..."); 
-      this.loading = true; 
-    }, 500);
+    let talert = window.setTimeout(()=> {
+      this.showLoadingOverlay();
+      this.loading = true;
+    }, 300);
 
     let response;
     try {
@@ -1180,7 +1275,7 @@ export class CommonTable{
     } finally {
       this.breakPoint = false;
       window.clearTimeout(talert);
-      this._tblList.clearAlert();
+      this.hideLoadingOverlay();
       this.loading = false;
     }
 
@@ -1220,13 +1315,16 @@ export class CommonTable{
       kuls_alert('입력값을 확인해주세요.');
       return false;
     }
+    // 저장 중 로딩 표시
+    this.showLoadingOverlay();
+
     try {
       const response = await axios.post(this._ajaxUrl, {
         // mode: this._putMode,
         ...tbData
       });
       if(response.data.every(d=>d.code === true)){
-        this.breakPoint = false;  
+        this.breakPoint = false;
         this._single.resetData('saveData');
         this.putSuccess();
         // kuls_success('저장되었습니다.')
@@ -1234,13 +1332,16 @@ export class CommonTable{
         this.breakPoint = false;
         this.putError(response.data);
         kuls_alert(response.data[0].message);
-        
+
       }
     } catch (error) {
       this.breakPoint = false;
       const errorMessage = error.response?.data?.message || error.message || '저장 중 오류가 발생했습니다.';
       console.log(errorMessage)
       // kuls_alert(errorMessage);
+    } finally {
+      // 로딩 숨기기
+      this.hideLoadingOverlay();
     }
 
   }
