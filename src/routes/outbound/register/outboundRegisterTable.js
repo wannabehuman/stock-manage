@@ -88,10 +88,10 @@ export class OutboundRegisterTable extends CommonTable {
     this.setUniCD(['id']); // 고유키 설정
     this.setTableName('출고등록');
 
-    // 품명 기준 정렬 설정
+    // 출고일자 기준 정렬 설정 (내림차순 - 최신순)
     this.setCtbSetting({
       initialSort: [
-        { column: "stock_name", dir: "asc" }
+        { column: "io_date", dir: "desc" }
       ]
     });
 

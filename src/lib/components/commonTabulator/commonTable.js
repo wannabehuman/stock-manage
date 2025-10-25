@@ -395,8 +395,8 @@ export class CommonTable{
       // selectable: true,
 
       // 반응형 설정
-      responsiveLayout: "hide",
-      responsiveLayoutCollapseStartOpen: false,
+      // responsiveLayout: "hide",
+      // responsiveLayoutCollapseStartOpen: false,
       
       // 컬럼 기본 설정
       columnDefaults: {
@@ -423,7 +423,7 @@ export class CommonTable{
       },
 
       // 페이지네이션 설정 - 비활성화 (footer 숨김)
-      pagination: false,
+      // pagination: false,
       // paginationMode: "local",
       // paginationSize: 50,
       // paginationSizeSelector: [25, 50, 100, 200],
@@ -719,7 +719,15 @@ export class CommonTable{
         }
         const oldValue = cell.getOldValue();
         const newValue = cell.getValue();
-  
+
+        // 날짜 필드에서 빈 값으로 수정하려고 하면 이전 값으로 복원
+        const column = cell.getColumn();
+        const editor = column.getDefinition().editor;
+        if (editor === 'date' && !newValue && oldValue) {
+          cell.setValue(oldValue);
+          return; // 복원 후 종료
+        }
+
         // 값이 실제로 바뀐 경우만 처리
         if (oldValue === newValue || (!oldValue && !newValue)) {
           return; // 무시
@@ -1079,28 +1087,24 @@ export class CommonTable{
     // 이미 오버레이가 있으면 제거
     this.hideLoadingOverlay();
 
-    // 테이블 요소 찾기
-    const tableElement = this._tblList?.element;
-    if (!tableElement) return;
+    // 테이블 요소 찾기 - 테이블이 없으면 셀렉터로 찾기
+    let tableElement = this._tblList?.element;
+    if (!tableElement && this._tableSelector) {
+      tableElement = document.getElementById(this._tableSelector);
+    }
 
-    // 오버레이 HTML 생성
-    const overlay = document.createElement('div');
-    overlay.className = 'tabulator-loading-overlay';
-    overlay.innerHTML = `
-      <div class="loading-spinner-container">
-        <div class="loading-spinner">
-          <svg class="animate-spin h-12 w-12 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-        </div>
-        <p class="loading-text">데이터를 불러오는 중...</p>
-      </div>
-    `;
+    if (!tableElement) {
+      console.warn('테이블 요소를 찾을 수 없어 Tabulator 기본 알림 사용');
+      // 테이블 요소가 없으면 Tabulator 기본 alert 사용
+      if (this._tblList && typeof this._tblList.alert === 'function') {
+        this._tblList.alert("Loading ...");
+      }
+      return;
+    }
 
-    // 스타일 추가
-    const style = document.createElement('style');
+    // 스타일 추가 (한 번만)
     if (!document.getElementById('tabulator-loading-styles')) {
+      const style = document.createElement('style');
       style.id = 'tabulator-loading-styles';
       style.textContent = `
         .tabulator-loading-overlay {
@@ -1109,18 +1113,20 @@ export class CommonTable{
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(255, 255, 255, 0.9);
+          background: rgba(255, 255, 255, 0.95);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 1000;
-          backdrop-filter: blur(2px);
+          backdrop-filter: blur(3px);
+          border-radius: 0.5rem;
         }
         .dark .tabulator-loading-overlay {
-          background: rgba(31, 41, 55, 0.9);
+          background: rgba(31, 41, 55, 0.95);
         }
         .loading-spinner-container {
           text-align: center;
+          padding: 2rem;
         }
         .loading-spinner {
           margin: 0 auto 1rem;
@@ -1140,16 +1146,29 @@ export class CommonTable{
       document.head.appendChild(style);
     }
 
-    // 테이블의 부모 요소에 position: relative 추가
-    const tableParent = tableElement.parentElement;
-    if (tableParent) {
-      const currentPosition = window.getComputedStyle(tableParent).position;
-      if (currentPosition === 'static') {
-        tableParent.style.position = 'relative';
-      }
-      tableParent.appendChild(overlay);
-      this.loadingOverlay = overlay;
+    // 오버레이 HTML 생성
+    const overlay = document.createElement('div');
+    overlay.className = 'tabulator-loading-overlay';
+    overlay.innerHTML = `
+      <div class="loading-spinner-container">
+        <div class="loading-spinner">
+          <svg class="animate-spin h-12 w-12 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+        <p class="loading-text">데이터를 불러오는 중...</p>
+      </div>
+    `;
+
+    // 테이블의 부모 요소에 오버레이 추가
+    const tableParent = tableElement.parentElement || tableElement;
+    const currentPosition = window.getComputedStyle(tableParent).position;
+    if (currentPosition === 'static') {
+      tableParent.style.position = 'relative';
     }
+    tableParent.appendChild(overlay);
+    this.loadingOverlay = overlay;
   }
 
   /**
@@ -1161,6 +1180,10 @@ export class CommonTable{
     if (this.loadingOverlay && this.loadingOverlay.parentNode) {
       this.loadingOverlay.parentNode.removeChild(this.loadingOverlay);
       this.loadingOverlay = null;
+    }
+    // Tabulator 기본 알림도 제거
+    if (this._tblList && typeof this._tblList.clearAlert === 'function') {
+      this._tblList.clearAlert();
     }
   }
 

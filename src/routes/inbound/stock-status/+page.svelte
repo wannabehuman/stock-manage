@@ -93,7 +93,7 @@
 </div>
 
 <!-- 재고현황 테이블 -->
-<Card class="p-3 w-full max-w-full flex-1 flex flex-col">
+<Card class="p-3 w-full max-w-full overflow-hidden flex-1 flex flex-col">
   <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-3 flex-shrink-0">
     <div>
       <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">재고현황</h2>
@@ -102,6 +102,6 @@
       </p>
     </div>
   </div>
-  <div id="stockStatusTable" class="w-full flex-1 min-h-0 overflow-x-auto"></div>
+  <div id="stockStatusTable" class="w-full flex-1 min-h-0"></div>
 </Card>
 </div>

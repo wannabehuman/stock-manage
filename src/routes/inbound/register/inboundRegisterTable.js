@@ -38,6 +38,14 @@ export class InboundRegisterTable extends CommonTable {
           const date = value instanceof Date ? value : new Date(value);
           if (isNaN(date.getTime())) return value;
           return date.toISOString().split('T')[0];
+        },
+        cellEdited: (cell) => {
+          // 입고일자가 수정되면 조제일자에 같은 날짜 자동 입력
+          const inboundDate = cell.getValue();
+          if (inboundDate) {
+            const row = cell.getRow();
+            row.getCell('preparation_date').setValue(inboundDate);
+          }
         }
       },
       { field: "preparation_date", title: "조제일자", width: 120, editor: "date",
@@ -112,7 +120,7 @@ export class InboundRegisterTable extends CommonTable {
       inbound_no: '', // 서버에서 자동 생성
       stock_code: '',
       inbound_date: today,
-      preparation_date: null,
+      preparation_date: today, // 조제일자도 오늘 날짜로 기본 설정
       quantity: 0,
       unit: 'EA',
       remark: ''

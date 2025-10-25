@@ -31,8 +31,8 @@
   }
 
   function handleKeydown(event) {
-    // Enter 키나 F4 키로 검색 팝업 열기
-    if (event.key === 'Enter' || event.key === 'F4') {
+    // F4 키로 검색 팝업 열기 (Enter는 SearchForm의 조회 기능 사용)
+    if (event.key === 'F4') {
       event.preventDefault();
       onSearch();
     }
