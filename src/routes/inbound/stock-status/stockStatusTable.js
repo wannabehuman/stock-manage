@@ -1,5 +1,6 @@
 import { CommonTable } from '../../../lib/components/commonTabulator/commonTable.js';
 import { createCodeFormatter, fetchCodeData } from '../../../lib/components/commonTabulator/codeEditor.js';
+import { TabulatorModal } from '../../../lib/components/commonTabulator/TabulatorModal.js';
 
 // 재고현황 테이블 클래스
 export class StockStatusTable extends CommonTable {
@@ -20,6 +21,8 @@ export class StockStatusTable extends CommonTable {
       { field: "current_quantity", title: "현재고", width: 120, hozAlign: "right",
         formatter: (cell) => {
           const value = cell.getValue();
+          const element = cell.getElement();
+          element.style.backgroundColor = "#FFE5CC";
           return value ? Number(value).toLocaleString() : '0';
         }
       },
@@ -68,15 +71,15 @@ export class StockStatusTable extends CommonTable {
         }
       },
 
-      { field: "outbound_action", title: "출고", width: 80, hozAlign: "center", headerSort: false,
-        formatter: (cell) => {
-          return '<button class="outbound-btn px-2 py-1 bg-orange-500 text-white rounded hover:bg-orange-600" title="출고하기">출고</button>';
-        },
-        cellClick: (e, cell) => {
-          const rowData = cell.getRow().getData();
-          this.openOutboundModal(rowData);
-        }
-      },
+      // { field: "outbound_action", title: "출고", width: 80, hozAlign: "center", headerSort: false,
+      //   formatter: (cell) => {
+      //     return '<button class="outbound-btn px-2 py-1 bg-orange-500 text-white rounded hover:bg-orange-600" title="출고하기">출고</button>';
+      //   },
+      //   cellClick: (e, cell) => {
+      //     const rowData = cell.getRow().getData();
+      //     this.openOutboundModal(rowData);
+      //   }
+      // },
     ];
 
     this.setFields(tableFields);
@@ -203,6 +206,21 @@ export class StockStatusTable extends CommonTable {
         return nameA.localeCompare(nameB, 'ko-KR');
       });
 
+      // 품목 선택 함수
+      const selectItem = (code, name) => {
+        // 검색 데이터에 설정
+        this.updateSearchData('itemCode', code);
+        this.updateSearchData('itemName', name);
+
+        // 입력 필드에 값 표시
+        const itemCodeInput = document.querySelector('[data-name="ITEM_CD"]');
+        const itemNameInput = document.querySelector('[data-name="ITEM_NM"]');
+        if (itemCodeInput) itemCodeInput.value = code;
+        if (itemNameInput) itemNameInput.value = name;
+
+        closeModal();
+      };
+
       // 테이블 렌더링 함수
       const renderTable = (filteredItems) => {
         let tableHTML = `
@@ -221,7 +239,9 @@ export class StockStatusTable extends CommonTable {
 
         filteredItems.forEach(item => {
           tableHTML += `
-            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+            <tr class="item-row bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
+                data-code="${item.code}"
+                data-name="${item.name}">
               <td class="px-4 py-3">${item.code || ''}</td>
               <td class="px-4 py-3">${item.name || ''}</td>
               <td class="px-4 py-3">${item.category || ''}</td>
@@ -254,34 +274,34 @@ export class StockStatusTable extends CommonTable {
         });
         document.getElementById('searchItemTableContainer').innerHTML = renderTable(filteredItems);
 
-        // 필터링 후 선택 버튼 이벤트 재등록
-        attachSelectButtons();
+        // 필터링 후 이벤트 재등록
+        attachEventListeners();
       });
 
-      // 선택 버튼 이벤트 등록 함수
-      const attachSelectButtons = () => {
+      // 이벤트 리스너 등록 함수
+      const attachEventListeners = () => {
+        // 선택 버튼 클릭 이벤트
         document.querySelectorAll('.select-search-item').forEach(btn => {
           btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // 행 더블클릭 이벤트와 충돌 방지
             const code = e.target.dataset.code;
             const name = e.target.dataset.name;
+            selectItem(code, name);
+          });
+        });
 
-            // 검색 데이터에 설정
-            this.updateSearchData('itemCode', code);
-            this.updateSearchData('itemName', name);
-
-            // 입력 필드에 값 표시
-            const itemCodeInput = document.querySelector('[data-name="ITEM_CD"]');
-            const itemNameInput = document.querySelector('[data-name="ITEM_NM"]');
-            if (itemCodeInput) itemCodeInput.value = code;
-            if (itemNameInput) itemNameInput.value = name;
-
-            closeModal();
+        // 행 더블클릭 이벤트
+        document.querySelectorAll('.item-row').forEach(row => {
+          row.addEventListener('dblclick', (e) => {
+            const code = e.currentTarget.dataset.code;
+            const name = e.currentTarget.dataset.name;
+            selectItem(code, name);
           });
         });
       };
 
-      // 초기 선택 버튼 이벤트 등록
-      attachSelectButtons();
+      // 초기 이벤트 등록
+      attachEventListeners();
 
     } catch (error) {
       console.error('품목 목록 조회 실패:', error);
@@ -302,6 +322,9 @@ export class StockStatusTable extends CommonTable {
 
     const stockCode = stockData.stock_code;
     const stockName = stockData.stock_name;
+
+    // 코드 데이터 미리 로드 (429 에러 방지)
+    await fetchCodeData('UNIT');
 
     // 모달 HTML 생성 (고정 크기: 1200px x 700px)
     const modalHTML = `
@@ -362,17 +385,21 @@ export class StockStatusTable extends CommonTable {
       });
 
       // 입출고 이력 가져오기
+      console.log('입출고 이력 API 호출:', `/api/real-stock/history/${stockCode}`);
       const response = await fetch(`/api/real-stock/history/${stockCode}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
 
+      console.log('입출고 이력 API 응답 상태:', response.status);
       if (!response.ok) {
         throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('입출고 이력 데이터:', data);
       const history = data.history || [];
+      console.log('입출고 이력 개수:', history.length);
 
       // 날짜 기준 최신순 정렬
       history.sort((a, b) => {
@@ -394,6 +421,8 @@ export class StockStatusTable extends CommonTable {
                 <th class="px-4 py-3">수량</th>
                 <th class="px-4 py-3">단위</th>
                 <th class="px-4 py-3">유통기한</th>
+                <th class="px-4 py-3">등록자</th>
+                <th class="px-4 py-3">수정자</th>
                 <th class="px-4 py-3">비고</th>
               </tr>
             </thead>
@@ -403,7 +432,7 @@ export class StockStatusTable extends CommonTable {
       if (history.length === 0) {
         tableHTML += `
           <tr>
-            <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+            <td colspan="10" class="px-4 py-8 text-center text-gray-500">
               입출고 이력이 없습니다.
             </td>
           </tr>
@@ -448,6 +477,8 @@ export class StockStatusTable extends CommonTable {
               </td>
               <td class="px-4 py-3">${unitMap[item.unit] || item.unit || ''}</td>
               <td class="px-4 py-3">${expiryDate || '-'}</td>
+              <td class="px-4 py-3">${item.created_by_name || '-'}</td>
+              <td class="px-4 py-3">${item.updated_by_name || '-'}</td>
               <td class="px-4 py-3">${item.remark || '-'}</td>
             </tr>
           `;
@@ -485,273 +516,346 @@ export class StockStatusTable extends CommonTable {
     }
   }
 
-  // 입고 모달 열기
-  async openInboundModal(stockData) {
-    const stockCode = stockData.stock_code;
-    const stockName = stockData.stock_name;
-
-    // Tabulator가 로드되었는지 확인
-    if (typeof window.Tabulator === 'undefined') {
-      alert('Tabulator 라이브러리를 로드하는 중입니다. 잠시 후 다시 시도해주세요.');
-      return;
-    }
-
-    // 모달 HTML 생성
-    const modalHTML = `
-      <div id="inboundModal" class="fixed inset-0 z-50 flex items-center justify-center" style="background-color: rgba(0,0,0,0.5);">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl" style="width: 1400px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
-          <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <div class="flex justify-between items-center">
-              <div>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">입고 등록</h3>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  품목코드: ${stockCode} | 품목명: ${stockName}
-                </p>
-              </div>
-              <button id="closeInboundModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="flex-1 overflow-auto p-6" style="min-height: 0;">
-            <div class="mb-4 flex justify-between items-center">
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                ✏️ 행을 추가하고 입고 정보를 입력한 후 저장 버튼을 클릭하세요.
-              </p>
-              <div class="flex gap-2">
-                <button id="addInboundRow" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">+ 행 추가</button>
-                <button id="saveInbound" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">💾 저장</button>
-              </div>
-            </div>
-            <div id="inboundModalTable" style="height: 500px;"></div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    // 닫기 버튼 이벤트
-    const closeModal = () => {
-      const modal = document.getElementById('inboundModal');
-      if (modal) modal.remove();
-    };
-
-    document.getElementById('closeInboundModal').addEventListener('click', closeModal);
-
-    // Tabulator 테이블 생성
-    const table = new window.Tabulator("#inboundModalTable", {
-      height: "100%",
-      layout: "fitDataStretch",
-      data: [],
-      columns: [
-        { field: "stock_code", title: "품목코드", width: 120, editor: false },
-        { field: "stock_name", title: "품목명", width: 150, editor: false },
-        { field: "inbound_date", title: "입고일자", width: 120, editor: "date", validator: "required" },
-        { field: "preparation_date", title: "조제일자", width: 120, editor: "date" },
-        { field: "quantity", title: "수량", width: 100, editor: "number", hozAlign: "right", validator: "required" },
-        { field: "unit", title: "단위", width: 100, editor: "input" },
-        { field: "remark", title: "비고", editor: "input" },
-        { field: "actions", title: "삭제", width: 80, hozAlign: "center", headerSort: false,
-          formatter: () => '<button class="delete-row px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">삭제</button>',
-          cellClick: (_e, cell) => {
+  // 입고 모달 컬럼 정의
+  _getInboundModalColumns() {
+    return [
+      { field: "inbound_no", title: "입고번호", width: 120, editor: false },
+      { field: "stock_code", title: "품목코드", width: 120, editor: false },
+      { field: "stock_name", title: "품목명", width: 150, editor: false },
+      {
+        field: "inbound_date",
+        title: "입고일자",
+        width: 120,
+        editor: "date",
+        validator: "required",
+        formatter: (cell) => {
+          const value = cell.getValue();
+          if (!value) return '';
+          const date = value instanceof Date ? value : new Date(value);
+          if (isNaN(date.getTime())) return value;
+          return date.toISOString().split('T')[0];
+        },
+        cellEdited: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS !== 'I') {
+            cell.getRow().update({ ROW_STATUS: 'U' });
+          }
+        }
+      },
+      {
+        field: "preparation_date",
+        title: "조제일자",
+        width: 120,
+        editor: "date",
+        formatter: (cell) => {
+          const value = cell.getValue();
+          if (!value) return '';
+          const date = value instanceof Date ? value : new Date(value);
+          if (isNaN(date.getTime())) return value;
+          return date.toISOString().split('T')[0];
+        },
+        cellEdited: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS !== 'I') {
+            cell.getRow().update({ ROW_STATUS: 'U' });
+          }
+        }
+      },
+      {
+        field: "quantity",
+        title: "수량",
+        width: 100,
+        editor: "number",
+        hozAlign: "right",
+        validator: "required",
+        formatter: (cell) => {
+          const value = cell.getValue();
+          return value ? Number(value).toLocaleString() : '0';
+        },
+        cellEdited: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS !== 'I') {
+            cell.getRow().update({ ROW_STATUS: 'U' });
+          }
+        }
+      },
+      {
+        field: "unit",
+        title: "단위",
+        width: 100,
+        editor: "input",
+        cellEdited: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS !== 'I') {
+            cell.getRow().update({ ROW_STATUS: 'U' });
+          }
+        }
+      },
+      {
+        field: "remark",
+        title: "비고",
+        editor: "input",
+        cellEdited: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS !== 'I') {
+            cell.getRow().update({ ROW_STATUS: 'U' });
+          }
+        }
+      },
+      { field: "created_by_name", title: "등록자", width: 100, editor: false },
+      { field: "updated_by_name", title: "수정자", width: 100, editor: false },
+      {
+        field: "actions",
+        title: "삭제",
+        width: 80,
+        hozAlign: "center",
+        headerSort: false,
+        formatter: () => '<button class="delete-row px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">삭제</button>',
+        cellClick: (_e, cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS !== 'I') {
+            cell.getRow().update({ ROW_STATUS: 'D' });
+          } else {
             cell.getRow().delete();
           }
         }
-      ]
-    });
-
-    // 행 추가 버튼
-    document.getElementById('addInboundRow').addEventListener('click', () => {
-      const today = new Date().toISOString().split('T')[0];
-      table.addRow({
-        stock_code: stockCode,
-        stock_name: stockName,
-        inbound_date: today,
-        quantity: 0,
-        unit: stockData.unit || '',
-        rowStatus: 'I'
-      });
-    });
-
-    // 저장 버튼
-    document.getElementById('saveInbound').addEventListener('click', async () => {
-      const data = table.getData();
-      if (data.length === 0) {
-        alert('입고할 데이터를 추가해주세요.');
-        return;
       }
+    ];
+  }
 
-      try {
-        const response = await fetch('/api/inbound/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+  // 입고 모달 열기
+  async openInboundModal(stockData) {
+    console.log('입고 모달 열기 시작:', stockData);
+    const stockCode = stockData.stock_code;
+    const stockName = stockData.stock_name;
+
+    // 코드 데이터 미리 로드 (429 에러 방지)
+    await Promise.all([
+      fetchCodeData('HERBER_KIND'),
+      fetchCodeData('UNIT')
+    ]);
+
+    // TabulatorModal 생성 (CommonTable 기반 - getMainList로 자동 조회)
+    const modal = new TabulatorModal({
+      modalId: 'inboundModal',
+      title: '입고 등록',
+      subtitle: `품목코드: ${stockCode} | 품목명: ${stockName}`,
+      width: '1400px',
+      tableHeight: '500px',
+      columns: this._getInboundModalColumns(),
+      placeholder: "입고 데이터가 없습니다. '+ 행 추가' 버튼을 눌러 입고 데이터를 추가하세요.",
+      addButtonText: '+ 행 추가',
+      saveButtonText: '💾 저장',
+      ajaxUrl: '/api/inbound', // CommonTable이 사용할 API URL
+      filterData: {
+        ITEM_CD: stockCode,  // 백엔드 API 스펙에 맞춰 ITEM_CD 사용
+        ST_DT: '',           // 빈 값으로 전달
+        ED_DT: '',           // 빈 값으로 전달
+        ITEM_NM: ''          // 빈 값으로 전달
+      },
+      refreshOnSave: true, // 저장 후 자동 리프레시 활성화
+      onSaveSuccess: () => {
+        // 저장 성공 후 메인 테이블 리프레시
+        this.getMainList();
+        modal.close();
+      },
+      onAddRow: (table, modalInstance) => {
+        // 행 추가 시 기본값 설정 - CommonTable의 addRow 사용
+        const today = new Date().toISOString().split('T')[0];
+        modalInstance.addRow({
+          stock_code: stockCode,
+          stock_name: stockName,
+          inbound_date: today,
+          preparation_date: today,
+          quantity: 0,
+          unit: stockData.unit || ''
+          // ROW_STATUS와 unicId는 addRow에서 자동 추가됨
         });
-
-        if (response.ok) {
-          alert('입고 등록이 완료되었습니다.');
-          closeModal();
-          this.getMainList(); // 재고현황 새로고침
-        } else {
-          throw new Error('저장 실패');
-        }
-      } catch (error) {
-        console.error('입고 저장 실패:', error);
-        alert('입고 등록에 실패했습니다.');
+      },
+      onClose: () => {
+        console.log('입고 모달 닫힘');
       }
     });
+
+    await modal.open();
+  }
+
+  // 출고 모달 컬럼 정의
+  _getOutboundModalColumns(inboundLots) {
+    return [
+      {
+        field: "inbound_no",
+        title: "입고번호",
+        width: 130,
+        editor: "list",
+        editorParams: {
+          values: inboundLots.map(lot => lot.inbound_no),
+          listOnEmpty: true
+        },
+        validator: "required",
+        cellEdited: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS !== 'I') {
+            cell.getRow().update({ ROW_STATUS: 'U' });
+          }
+        }
+      },
+      { field: "stock_code", title: "품목코드", width: 120, editor: false },
+      { field: "stock_name", title: "품목명", width: 150, editor: false },
+      {
+        field: "io_date",
+        title: "출고일자",
+        width: 120,
+        editor: "date",
+        validator: "required",
+        formatter: (cell) => {
+          const value = cell.getValue();
+          if (!value) return '';
+          const date = value instanceof Date ? value : new Date(value);
+          if (isNaN(date.getTime())) return value;
+          return date.toISOString().split('T')[0];
+        },
+        cellEdited: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS !== 'I') {
+            cell.getRow().update({ ROW_STATUS: 'U' });
+          }
+        }
+      },
+      {
+        field: "quantity",
+        title: "수량",
+        width: 100,
+        editor: "number",
+        hozAlign: "right",
+        validator: "required",
+        formatter: (cell) => {
+          const value = cell.getValue();
+          return value ? Number(value).toLocaleString() : '0';
+        },
+        cellEdited: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS !== 'I') {
+            cell.getRow().update({ ROW_STATUS: 'U' });
+          }
+        }
+      },
+      {
+        field: "unit",
+        title: "단위",
+        width: 100,
+        editor: "input",
+        cellEdited: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS !== 'I') {
+            cell.getRow().update({ ROW_STATUS: 'U' });
+          }
+        }
+      },
+      {
+        field: "remark",
+        title: "비고",
+        editor: "input",
+        cellEdited: (cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS !== 'I') {
+            cell.getRow().update({ ROW_STATUS: 'U' });
+          }
+        }
+      },
+      { field: "created_by_name", title: "등록자", width: 100, editor: false },
+      { field: "updated_by_name", title: "수정자", width: 100, editor: false },
+      {
+        field: "actions",
+        title: "삭제",
+        width: 80,
+        hozAlign: "center",
+        headerSort: false,
+        formatter: () => '<button class="delete-row px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">삭제</button>',
+        cellClick: (_e, cell) => {
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS !== 'I') {
+            cell.getRow().update({ ROW_STATUS: 'D' });
+          } else {
+            cell.getRow().delete();
+          }
+        }
+      }
+    ];
   }
 
   // 출고 모달 열기
   async openOutboundModal(stockData) {
+    console.log('출고 모달 열기 시작:', stockData);
     const stockCode = stockData.stock_code;
     const stockName = stockData.stock_name;
     const currentQty = stockData.current_quantity || 0;
 
-    // Tabulator가 로드되었는지 확인
-    if (typeof window.Tabulator === 'undefined') {
-      alert('Tabulator 라이브러리를 로드하는 중입니다. 잠시 후 다시 시도해주세요.');
-      return;
-    }
+    // 코드 데이터 미리 로드 (429 에러 방지)
+    await Promise.all([
+      fetchCodeData('HERBER_KIND'),
+      fetchCodeData('UNIT')
+    ]);
 
-    // 해당 품목의 입고 lot 목록 가져오기
+    // 입고 LOT 목록 조회
     let inboundLots = [];
     try {
+      console.log('입고 LOT 목록 조회 중...');
       const response = await fetch(`/api/inbound/stock/${stockCode}`);
+      console.log('LOT API 응답 상태:', response.status);
       if (response.ok) {
         inboundLots = await response.json();
-        // 수량이 0보다 큰 lot만 필터링
+        console.log('조회된 입고 LOT:', inboundLots);
         inboundLots = inboundLots.filter(lot => lot.quantity > 0);
+        console.log('필터링 후 LOT:', inboundLots);
       }
     } catch (error) {
       console.error('입고 lot 조회 실패:', error);
     }
 
-    // 모달 HTML 생성
-    const modalHTML = `
-      <div id="outboundModal" class="fixed inset-0 z-50 flex items-center justify-center" style="background-color: rgba(0,0,0,0.5);">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl" style="width: 1400px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
-          <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <div class="flex justify-between items-center">
-              <div>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">출고 등록</h3>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  품목코드: ${stockCode} | 품목명: ${stockName} | 현재고: ${Number(currentQty).toLocaleString()}
-                </p>
-              </div>
-              <button id="closeOutboundModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
+    // TabulatorModal 생성 (CommonTable 기반 - getMainList로 자동 조회)
+    const modal = new TabulatorModal({
+      modalId: 'outboundModal',
+      title: '출고 등록',
+      subtitle: `품목코드: ${stockCode} | 품목명: ${stockName} | 현재고: ${Number(currentQty).toLocaleString()}`,
+      width: '1400px',
+      tableHeight: '500px',
+      columns: this._getOutboundModalColumns(inboundLots),
+      placeholder: "출고 데이터가 없습니다. '+ 행 추가' 버튼을 눌러 출고 데이터를 추가하세요.",
+      addButtonText: '+ 행 추가',
+      saveButtonText: '💾 저장',
+      onAddRow: (table, modalInstance) => {
+        // 빈 행 추가 - 사용자가 입고 LOT를 선택하도록 함
+        const today = new Date().toISOString().split('T')[0];
 
-          <div class="flex-1 overflow-auto p-6" style="min-height: 0;">
-            <div class="mb-4 flex justify-between items-center">
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                ✏️ 행을 추가하고 출고 정보를 입력한 후 저장 버튼을 클릭하세요.
-              </p>
-              <div class="flex gap-2">
-                <button id="addOutboundRow" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">+ 행 추가</button>
-                <button id="saveOutbound" class="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">💾 저장</button>
-              </div>
-            </div>
-            <div id="outboundModalTable" style="height: 500px;"></div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    // 닫기 버튼 이벤트
-    const closeModal = () => {
-      const modal = document.getElementById('outboundModal');
-      if (modal) modal.remove();
-    };
-
-    document.getElementById('closeOutboundModal').addEventListener('click', closeModal);
-
-    // Tabulator 테이블 생성
-    const table = new window.Tabulator("#outboundModalTable", {
-      height: "100%",
-      layout: "fitDataStretch",
-      data: [],
-      columns: [
-        { field: "inbound_no", title: "입고번호", width: 130, editor: "list", editorParams: {
-          values: inboundLots.map(lot => lot.inbound_no),
-          listOnEmpty: true
-        }, validator: "required" },
-        { field: "stock_code", title: "품목코드", width: 120, editor: false },
-        { field: "stock_name", title: "품목명", width: 150, editor: false },
-        { field: "io_date", title: "출고일자", width: 120, editor: "date", validator: "required" },
-        { field: "quantity", title: "수량", width: 100, editor: "number", hozAlign: "right", validator: "required" },
-        { field: "unit", title: "단위", width: 100, editor: "input" },
-        { field: "remark", title: "비고", editor: "input" },
-        { field: "actions", title: "삭제", width: 80, hozAlign: "center", headerSort: false,
-          formatter: () => '<button class="delete-row px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">삭제</button>',
-          cellClick: (_e, cell) => {
-            cell.getRow().delete();
-          }
-        }
-      ]
-    });
-
-    // 행 추가 버튼
-    document.getElementById('addOutboundRow').addEventListener('click', () => {
-      const today = new Date().toISOString().split('T')[0];
-      const defaultInboundNo = inboundLots.length > 0 ? inboundLots[0].inbound_no : '';
-
-      table.addRow({
-        inbound_no: defaultInboundNo,
-        stock_code: stockCode,
-        stock_name: stockName,
-        io_date: today,
-        quantity: 0,
-        unit: stockData.unit || '',
-        rowStatus: 'I'
-      });
-    });
-
-    // 저장 버튼
-    document.getElementById('saveOutbound').addEventListener('click', async () => {
-      const data = table.getData();
-      if (data.length === 0) {
-        alert('출고할 데이터를 추가해주세요.');
-        return;
-      }
-
-      // 출고 수량 검증
-      for (const row of data) {
-        if (row.quantity > currentQty) {
-          alert(`출고 수량(${row.quantity})이 현재고(${currentQty})를 초과할 수 없습니다.`);
-          return;
-        }
-      }
-
-      try {
-        const response = await fetch('/api/outbound/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+        modalInstance.addRow({
+          inbound_no: '', // 비워두고 사용자가 선택하도록
+          stock_code: stockCode,
+          stock_name: stockName,
+          io_date: today,
+          quantity: 0,
+          unit: stockData.unit || ''
+          // ROW_STATUS와 unicId는 addRow에서 자동 추가됨
         });
-
-        if (response.ok) {
-          alert('출고 등록이 완료되었습니다.');
-          closeModal();
-          this.getMainList(); // 재고현황 새로고침
-        } else {
-          throw new Error('저장 실패');
-        }
-      } catch (error) {
-        console.error('출고 저장 실패:', error);
-        alert('출고 등록에 실패했습니다.');
+      },
+      ajaxUrl: '/api/outbound', // CommonTable이 사용할 API URL
+      filterData: {
+        ITEM_CD: stockCode,  // 백엔드 API 스펙에 맞춰 ITEM_CD 사용
+        ST_DT: '',           // 빈 값으로 전달
+        ED_DT: '',           // 빈 값으로 전달
+        ITEM_NM: ''          // 빈 값으로 전달
+      },
+      refreshOnSave: true, // 저장 후 자동 리프레시 활성화
+      onSaveSuccess: () => {
+        // 저장 성공 후 메인 테이블 리프레시
+        this.getMainList();
+        modal.close();
+      },
+      onClose: () => {
+        console.log('출고 모달 닫힘');
       }
     });
+
+    await modal.open();
   }
 }

@@ -7,6 +7,20 @@ import { SingleTon } from './singleTon.js';
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import axios from 'axios';
 
+// axios 인터셉터 설정 - 모든 요청에 JWT 토큰 추가
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // 유틸리티 함수들
 function uniqid() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);

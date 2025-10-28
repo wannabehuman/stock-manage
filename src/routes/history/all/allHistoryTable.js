@@ -105,8 +105,10 @@ export class AllHistoryTable extends CommonTable {
 
     // 날짜 기준 최신순 정렬
     this.setCtbSetting({
+      layout: "fitData", // 컬럼 너비 유지하고 가로 스크롤 생성
+      height: "100%", // 명시적 높이 설정
       initialSort: [
-        { column: "io_date", dir: "desc" }
+        { column: "stock_name", dir: "asc" }
       ]
     });
 

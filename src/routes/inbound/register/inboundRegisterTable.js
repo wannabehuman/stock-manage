@@ -81,6 +81,8 @@ export class InboundRegisterTable extends CommonTable {
         }
       },
       { field: "remark", title: "비고", width: 200, editor: "input" },
+      { field: "created_by_name", title: "등록자", width: 100, editor: false },
+      { field: "updated_by_name", title: "수정자", width: 100, editor: false },
       { field: "Del_Check", title: "삭제", frozen: true, width: 70,
         formatter: (cell) => {
           return '🗑️';
@@ -96,8 +98,10 @@ export class InboundRegisterTable extends CommonTable {
     this.setUniCD(['inbound_no']); // 고유키 설정
     this.setTableName('입고등록');
 
-    // 품명 기준 정렬 설정
+    // 품명 기준 정렬 설정 및 레이아웃
     this.setCtbSetting({
+      layout: "fitData", // 컬럼 너비 유지하고 가로 스크롤 생성
+      height: "100%", // 명시적 높이 설정
       initialSort: [
         { column: "stock_name", dir: "asc" }
       ]
@@ -458,6 +462,23 @@ export class InboundRegisterTable extends CommonTable {
         stockMap[stock.stock_code] += parseFloat(stock.quantity) || 0;
       });
 
+      // 품목 선택 함수
+      const selectItem = (code, name, unit, currentStock) => {
+        // 셀에 값 설정
+        cell.setValue(code);
+
+        // 같은 행의 다른 필드도 채우기
+        const row = cell.getRow();
+        if (name) {
+          row.getCell('stock_name').setValue(name);
+        }
+        if (unit) {
+          row.getCell('unit').setValue(unit);
+        }
+
+        closeModal();
+      };
+
       // 테이블 렌더링 함수
       const renderTable = (filteredItems) => {
         let tableHTML = `
@@ -478,7 +499,11 @@ export class InboundRegisterTable extends CommonTable {
         filteredItems.forEach(item => {
           const currentStock = stockMap[item.code] || 0;
           tableHTML += `
-            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+            <tr class="item-modal-row bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
+                data-code="${item.code}"
+                data-name="${item.name}"
+                data-unit="${item.unit}"
+                data-current-stock="${currentStock}">
               <td class="px-4 py-3">${item.code || ''}</td>
               <td class="px-4 py-3">${item.name || ''}</td>
               <td class="px-4 py-3">${item.category || ''}</td>
@@ -514,38 +539,38 @@ export class InboundRegisterTable extends CommonTable {
         });
         document.getElementById('itemTableContainer').innerHTML = renderTable(filteredItems);
 
-        // 필터링 후 선택 버튼 이벤트 재등록
-        attachSelectButtons();
+        // 필터링 후 이벤트 재등록
+        attachEventListeners();
       });
 
-      // 선택 버튼 이벤트 등록 함수
-      const attachSelectButtons = () => {
+      // 이벤트 리스너 등록 함수
+      const attachEventListeners = () => {
+        // 선택 버튼 클릭 이벤트
         document.querySelectorAll('.select-item').forEach(btn => {
           btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // 행 더블클릭 이벤트와 충돌 방지
             const code = e.target.dataset.code;
             const name = e.target.dataset.name;
             const unit = e.target.dataset.unit;
             const currentStock = e.target.dataset.currentStock;
+            selectItem(code, name, unit, currentStock);
+          });
+        });
 
-            // 셀에 값 설정
-            cell.setValue(code);
-
-            // 같은 행의 다른 필드도 채우기
-            const row = cell.getRow();
-            if (name) {
-              row.getCell('stock_name').setValue(name);
-            }
-            if (unit) {
-              row.getCell('unit').setValue(unit);
-            }
-
-            closeModal();
+        // 행 더블클릭 이벤트
+        document.querySelectorAll('.item-modal-row').forEach(row => {
+          row.addEventListener('dblclick', (e) => {
+            const code = e.currentTarget.dataset.code;
+            const name = e.currentTarget.dataset.name;
+            const unit = e.currentTarget.dataset.unit;
+            const currentStock = e.currentTarget.dataset.currentStock;
+            selectItem(code, name, unit, currentStock);
           });
         });
       };
 
-      // 초기 선택 버튼 이벤트 등록
-      attachSelectButtons();
+      // 초기 이벤트 등록
+      attachEventListeners();
 
     } catch (error) {
       console.error('품목 목록 조회 실패:', error);

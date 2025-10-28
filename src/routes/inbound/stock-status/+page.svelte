@@ -5,12 +5,19 @@
   import { StockStatusTable } from './stockStatusTable.js';
   import { SearchForm, ItemCdInput, ItemNmInput, ItemGrpInput } from '../../../lib/components/forms';
   import { SingleTon } from '../../../lib/components/commonTabulator/singleTon.js';
+  import { fetchCodeData } from '../../../lib/components/commonTabulator/codeEditor.js';
 
   // 테이블 인스턴스
   let stockStatusTable;
   const single = SingleTon.getInstance();
 
-  onMount(() => {
+  onMount(async () => {
+    // 코드 데이터 미리 로드 (429 에러 방지)
+    await Promise.all([
+      fetchCodeData('HERBER_KIND'),
+      fetchCodeData('UNIT')
+    ]);
+
     // 재고현황 테이블 초기화
     setTimeout(() => {
       try {

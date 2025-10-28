@@ -73,6 +73,8 @@ export class OutboundRegisterTable extends CommonTable {
         validation: [{ type: 'required' }]
       },
       { field: "remark", title: "비고", width: 200, editor: "input" },
+      { field: "created_by_name", title: "등록자", width: 100, editor: false },
+      { field: "updated_by_name", title: "수정자", width: 100, editor: false },
       { field: "Del_Check", title: "삭제", frozen: true, width: 70,
         formatter: (cell) => {
           return '🗑️';
@@ -88,8 +90,10 @@ export class OutboundRegisterTable extends CommonTable {
     this.setUniCD(['id']); // 고유키 설정
     this.setTableName('출고등록');
 
-    // 출고일자 기준 정렬 설정 (내림차순 - 최신순)
+    // 출고일자 기준 정렬 설정 (내림차순 - 최신순) 및 레이아웃
     this.setCtbSetting({
+      layout: "fitData", // 컬럼 너비 유지하고 가로 스크롤 생성
+      height: "100%", // 명시적 높이 설정
       initialSort: [
         { column: "io_date", dir: "desc" }
       ]
@@ -422,6 +426,32 @@ export class OutboundRegisterTable extends CommonTable {
         return nameA.localeCompare(nameB, 'ko-KR');
       });
 
+      // 품목 선택 함수
+      const selectItem = (inboundNo, code, name, inboundDate, prepDate, maxQuantity, unit) => {
+        // 셀에 값 설정
+        cell.setValue(code);
+
+        // 같은 행의 다른 필드도 채우기
+        const row = cell.getRow();
+        if (inboundNo) {
+          row.getCell('inbound_no').setValue(inboundNo);
+        }
+        if (name) {
+          row.getCell('stock_name').setValue(name);
+        }
+        if (inboundDate) {
+          row.getCell('inbound_date').setValue(inboundDate);
+        }
+        if (prepDate) {
+          row.getCell('preparation_date').setValue(prepDate);
+        }
+        if (unit) {
+          row.getCell('unit').setValue(unit);
+        }
+
+        closeModal();
+      };
+
       // 테이블 렌더링 함수
       const renderTable = (filteredItems) => {
         let tableHTML = `
@@ -455,7 +485,14 @@ export class OutboundRegisterTable extends CommonTable {
             const prepDate = item.preparation_date ? new Date(item.preparation_date).toISOString().split('T')[0] : '';
 
             tableHTML += `
-              <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+              <tr class="item-modal-row bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
+                  data-inbound-no="${item.inbound_no || ''}"
+                  data-code="${item.stock_code}"
+                  data-name="${item.stock_name || ''}"
+                  data-inbound-date="${inboundDate}"
+                  data-prep-date="${prepDate}"
+                  data-quantity="${item.quantity}"
+                  data-unit="${item.unit}">
                 <td class="px-4 py-3">${item.inbound_no || ''}</td>
                 <td class="px-4 py-3">${item.stock_code || ''}</td>
                 <td class="px-4 py-3">${item.stock_name || ''}</td>
@@ -497,14 +534,16 @@ export class OutboundRegisterTable extends CommonTable {
         });
         document.getElementById('itemTableContainer').innerHTML = renderTable(filteredItems);
 
-        // 필터링 후 선택 버튼 이벤트 재등록
-        attachSelectButtons();
+        // 필터링 후 이벤트 재등록
+        attachEventListeners();
       });
 
-      // 선택 버튼 이벤트 등록 함수
-      const attachSelectButtons = () => {
+      // 이벤트 리스너 등록 함수
+      const attachEventListeners = () => {
+        // 선택 버튼 클릭 이벤트
         document.querySelectorAll('.select-item').forEach(btn => {
           btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // 행 더블클릭 이벤트와 충돌 방지
             const inboundNo = e.target.dataset.inboundNo;
             const code = e.target.dataset.code;
             const name = e.target.dataset.name;
@@ -512,35 +551,27 @@ export class OutboundRegisterTable extends CommonTable {
             const prepDate = e.target.dataset.prepDate;
             const maxQuantity = e.target.dataset.quantity;
             const unit = e.target.dataset.unit;
+            selectItem(inboundNo, code, name, inboundDate, prepDate, maxQuantity, unit);
+          });
+        });
 
-            // 셀에 값 설정
-            cell.setValue(code);
-
-            // 같은 행의 다른 필드도 채우기
-            const row = cell.getRow();
-            if (inboundNo) {
-              row.getCell('inbound_no').setValue(inboundNo);
-            }
-            if (name) {
-              row.getCell('stock_name').setValue(name);
-            }
-            if (inboundDate) {
-              row.getCell('inbound_date').setValue(inboundDate);
-            }
-            if (prepDate) {
-              row.getCell('preparation_date').setValue(prepDate);
-            }
-            if (unit) {
-              row.getCell('unit').setValue(unit);
-            }
-
-            closeModal();
+        // 행 더블클릭 이벤트
+        document.querySelectorAll('.item-modal-row').forEach(row => {
+          row.addEventListener('dblclick', (e) => {
+            const inboundNo = e.currentTarget.dataset.inboundNo;
+            const code = e.currentTarget.dataset.code;
+            const name = e.currentTarget.dataset.name;
+            const inboundDate = e.currentTarget.dataset.inboundDate;
+            const prepDate = e.currentTarget.dataset.prepDate;
+            const maxQuantity = e.currentTarget.dataset.quantity;
+            const unit = e.currentTarget.dataset.unit;
+            selectItem(inboundNo, code, name, inboundDate, prepDate, maxQuantity, unit);
           });
         });
       };
 
-      // 초기 선택 버튼 이벤트 등록
-      attachSelectButtons();
+      // 초기 이벤트 등록
+      attachEventListeners();
 
     } catch (error) {
       console.error('품목 목록 조회 실패:', error);
