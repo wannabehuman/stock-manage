@@ -858,4 +858,26 @@ export class StockStatusTable extends CommonTable {
 
     await modal.open();
   }
+
+  /**
+   * 엑셀 다운로드
+   */
+  exportToExcel() {
+    // 현재 검색 조건 가져오기
+    const searchData = this.getSearchData();
+
+    // 쿼리 파라미터 생성
+    const params = new URLSearchParams();
+    if (searchData.itemGrpCode) params.append('itemGrpCode', searchData.itemGrpCode);
+    if (searchData.itemCode) params.append('itemCode', searchData.itemCode);
+    if (searchData.itemName) params.append('itemName', searchData.itemName);
+
+    // API 호출하여 파일 다운로드
+    const url = `/api/real-stock/export-excel${params.toString() ? '?' + params.toString() : ''}`;
+
+    // 새 창으로 다운로드 (브라우저가 자동으로 파일 다운로드 처리)
+    window.open(url, '_blank');
+
+    console.log('엑셀 다운로드 요청:', url);
+  }
 }

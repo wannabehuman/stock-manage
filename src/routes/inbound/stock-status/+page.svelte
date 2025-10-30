@@ -91,10 +91,10 @@
   />
 
   <svelte:fragment slot="buttons">
-    <!-- <Button color="blue" on:click={() => stockStatusTable?.search()}>
-      🔍
-      조회
-    </Button> -->
+    <Button color="green" on:click={() => stockStatusTable?.exportToExcel()}>
+      📥
+      엑셀 다운로드
+    </Button>
   </svelte:fragment>
 </SearchForm>
 </div>
