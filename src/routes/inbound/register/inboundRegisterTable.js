@@ -21,8 +21,15 @@ export class InboundRegisterTable extends CommonTable {
       { field: "inbound_no", title: "입고번호", width: 120, editor: "input" },
       { field: "stock_code", title: "품목코드", width: 120,
         validation: [{ type: 'required' }],
+        editable: (cell) => {
+          const rowData = cell.getRow().getData();
+          return rowData.ROW_STATUS === 'I'; // 신규 행만 수정 가능
+        },
         cellClick: (e, cell) => {
-          this.openItemModal(cell);
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS === 'I') {
+            this.openItemModal(cell);
+          }
         },
         formatter: (cell) => {
           const value = cell.getValue();
@@ -32,6 +39,10 @@ export class InboundRegisterTable extends CommonTable {
       { field: "stock_name", title: "품목명", width: 150, editor: false },
       { field: "inbound_date", title: "입고일자", width: 120, editor: "date",
         validation: [{ type: 'required' }],
+        editable: (cell) => {
+          const rowData = cell.getRow().getData();
+          return rowData.ROW_STATUS === 'I'; // 신규 행만 수정 가능
+        },
         formatter: (cell) => {
           const value = cell.getValue();
           if (!value) return '';
@@ -103,7 +114,7 @@ export class InboundRegisterTable extends CommonTable {
       layout: "fitData", // 컬럼 너비 유지하고 가로 스크롤 생성
       height: "100%", // 명시적 높이 설정
       initialSort: [
-        { column: "stock_name", dir: "asc" }
+        { column: "inbound_date", dir: "desc" }
       ]
     });
 

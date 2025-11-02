@@ -21,8 +21,15 @@ export class OutboundRegisterTable extends CommonTable {
       { field: "inbound_no", title: "입고번호", width: 120, editor: false },
       { field: "stock_code", title: "품목코드", width: 120,
         validation: [{ type: 'required' }],
+        editable: (cell) => {
+          const rowData = cell.getRow().getData();
+          return rowData.ROW_STATUS === 'I'; // 신규 행만 수정 가능
+        },
         cellClick: (e, cell) => {
-          this.openItemModal(cell);
+          const rowData = cell.getRow().getData();
+          if (rowData.ROW_STATUS === 'I') {
+            this.openItemModal(cell);
+          }
         },
         formatter: (cell) => {
           const value = cell.getValue();
@@ -50,6 +57,10 @@ export class OutboundRegisterTable extends CommonTable {
       },
       { field: "io_date", title: "출고일자", width: 120, editor: "date",
         validation: [{ type: 'required' }],
+        editable: (cell) => {
+          const rowData = cell.getRow().getData();
+          return rowData.ROW_STATUS === 'I'; // 신규 행만 수정 가능
+        },
         formatter: (cell) => {
           const value = cell.getValue();
           if (!value) return '';
@@ -358,7 +369,7 @@ export class OutboundRegisterTable extends CommonTable {
     const modalHTML = `
       <div id="itemModal" class="fixed inset-0 z-50 overflow-y-auto" style="background-color: rgba(0,0,0,0.5);">
         <div class="flex items-center justify-center min-h-screen p-4">
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl">
             <div class="p-6">
               <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white">품목 선택</h3>
@@ -427,7 +438,7 @@ export class OutboundRegisterTable extends CommonTable {
       });
 
       // 품목 선택 함수
-      const selectItem = (inboundNo, code, name, inboundDate, prepDate, maxQuantity, unit) => {
+      const selectItem = (inboundNo, code, name, inboundDate, prepDate, maxQuantity, unit, remark) => {
         // 셀에 값 설정
         cell.setValue(code);
 
@@ -448,6 +459,9 @@ export class OutboundRegisterTable extends CommonTable {
         if (unit) {
           row.getCell('unit').setValue(unit);
         }
+        if (remark) {
+          row.getCell('remark').setValue(remark);
+        }
 
         closeModal();
       };
@@ -460,11 +474,12 @@ export class OutboundRegisterTable extends CommonTable {
               <tr>
                 <th class="px-4 py-3">입고번호</th>
                 <th class="px-4 py-3">품목코드</th>
-                <th class="px-4 py-3">품목명</th>
-                <th class="px-4 py-3">입고일자</th>
-                <th class="px-4 py-3">조제일자</th>
-                <th class="px-4 py-3">재고수량</th>
+                <th class="px-4 py-3" style="min-width: 140px;">품목명</th>
+                <th class="px-4 py-3" style="min-width: 140px;">입고일자</th>
+                <th class="px-4 py-3" style="min-width: 140px;">조제일자</th>
+                <th class="px-4 py-3" style="min-width: 140px;">재고수량</th>
                 <th class="px-4 py-3">단위</th>
+                <th class="px-4 py-3" style="min-width: 300px;">비고</th>
                 <th class="px-4 py-3">선택</th>
               </tr>
             </thead>
@@ -474,7 +489,7 @@ export class OutboundRegisterTable extends CommonTable {
         if (filteredItems.length === 0) {
           tableHTML += `
             <tr>
-              <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+              <td colspan="9" class="px-4 py-8 text-center text-gray-500">
                 출고 가능한 재고가 없습니다.
               </td>
             </tr>
@@ -492,7 +507,8 @@ export class OutboundRegisterTable extends CommonTable {
                   data-inbound-date="${inboundDate}"
                   data-prep-date="${prepDate}"
                   data-quantity="${item.quantity}"
-                  data-unit="${item.unit}">
+                  data-unit="${item.unit}"
+                  data-remark="${item.remark || ''}">
                 <td class="px-4 py-3">${item.inbound_no || ''}</td>
                 <td class="px-4 py-3">${item.stock_code || ''}</td>
                 <td class="px-4 py-3">${item.stock_name || ''}</td>
@@ -500,6 +516,7 @@ export class OutboundRegisterTable extends CommonTable {
                 <td class="px-4 py-3">${prepDate}</td>
                 <td class="px-4 py-3 text-right">${item.quantity || 0}</td>
                 <td class="px-4 py-3">${item.unit || ''}</td>
+                <td class="px-4 py-3" style="min-width: 300px;">${item.remark || '-'}</td>
                 <td class="px-4 py-3">
                   <button class="select-item px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                           data-inbound-no="${item.inbound_no || ''}"
@@ -508,7 +525,8 @@ export class OutboundRegisterTable extends CommonTable {
                           data-inbound-date="${inboundDate}"
                           data-prep-date="${prepDate}"
                           data-quantity="${item.quantity}"
-                          data-unit="${item.unit}">
+                          data-unit="${item.unit}"
+                          data-remark="${item.remark || ''}">
                     선택
                   </button>
                 </td>
@@ -551,7 +569,8 @@ export class OutboundRegisterTable extends CommonTable {
             const prepDate = e.target.dataset.prepDate;
             const maxQuantity = e.target.dataset.quantity;
             const unit = e.target.dataset.unit;
-            selectItem(inboundNo, code, name, inboundDate, prepDate, maxQuantity, unit);
+            const remark = e.target.dataset.remark;
+            selectItem(inboundNo, code, name, inboundDate, prepDate, maxQuantity, unit, remark);
           });
         });
 
@@ -565,7 +584,8 @@ export class OutboundRegisterTable extends CommonTable {
             const prepDate = e.currentTarget.dataset.prepDate;
             const maxQuantity = e.currentTarget.dataset.quantity;
             const unit = e.currentTarget.dataset.unit;
-            selectItem(inboundNo, code, name, inboundDate, prepDate, maxQuantity, unit);
+            const remark = e.currentTarget.dataset.remark;
+            selectItem(inboundNo, code, name, inboundDate, prepDate, maxQuantity, unit, remark);
           });
         });
       };

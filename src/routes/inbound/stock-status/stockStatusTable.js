@@ -71,15 +71,15 @@ export class StockStatusTable extends CommonTable {
         }
       },
 
-      // { field: "outbound_action", title: "출고", width: 80, hozAlign: "center", headerSort: false,
-      //   formatter: (cell) => {
-      //     return '<button class="outbound-btn px-2 py-1 bg-orange-500 text-white rounded hover:bg-orange-600" title="출고하기">출고</button>';
-      //   },
-      //   cellClick: (e, cell) => {
-      //     const rowData = cell.getRow().getData();
-      //     this.openOutboundModal(rowData);
-      //   }
-      // },
+      { field: "outbound_action", title: "출고", width: 80, hozAlign: "center", headerSort: false,
+        formatter: (cell) => {
+          return '<button class="outbound-btn px-2 py-1 bg-orange-500 text-white rounded hover:bg-orange-600" title="출고하기">출고</button>';
+        },
+        cellClick: (e, cell) => {
+          const rowData = cell.getRow().getData();
+          this.openOutboundModal(rowData);
+        }
+      },
     ];
 
     this.setFields(tableFields);
@@ -681,33 +681,97 @@ export class StockStatusTable extends CommonTable {
   }
 
   // 출고 모달 컬럼 정의
-  _getOutboundModalColumns(inboundLots) {
+  _getOutboundModalColumns() {
     return [
+      { field: "inbound_no", title: "입고번호", width: 120, editor: false },
+      { field: "stock_code", title: "품목코드", width: 120, editor: false },
+      { field: "stock_name", title: "품목명", width: 150, editor: false },
       {
-        field: "inbound_no",
-        title: "입고번호",
-        width: 130,
-        editor: "list",
-        editorParams: {
-          values: inboundLots.map(lot => lot.inbound_no),
-          listOnEmpty: true
+        field: "inbound_date",
+        title: "입고일자",
+        width: 120,
+        editor: false,
+        formatter: (cell) => {
+          const value = cell.getValue();
+          if (!value) return '';
+          const date = value instanceof Date ? value : new Date(value);
+          if (isNaN(date.getTime())) return value;
+          return date.toISOString().split('T')[0];
+        }
+      },
+      {
+        field: "preparation_date",
+        title: "조제일자",
+        width: 120,
+        editor: false,
+        formatter: (cell) => {
+          const value = cell.getValue();
+          if (!value) return '';
+          const date = value instanceof Date ? value : new Date(value);
+          if (isNaN(date.getTime())) return value;
+          return date.toISOString().split('T')[0];
+        }
+      },
+      {
+        field: "inbound_quantity",
+        title: "입고수량",
+        width: 100,
+        hozAlign: "right",
+        editor: false,
+        formatter: (cell) => {
+          const value = cell.getValue();
+          return value ? Number(value).toLocaleString() : '0';
+        }
+      },
+      {
+        field: "outbound_quantity",
+        title: "출고수량",
+        width: 100,
+        hozAlign: "right",
+        editor: false,
+        formatter: (cell) => {
+          const value = cell.getValue();
+          return value ? Number(value).toLocaleString() : '0';
+        }
+      },
+      {
+        field: "new_outbound_quantity",
+        title: "신규출고수량",
+        width: 120,
+        editor: "number",
+        hozAlign: "right",
+        editorParams: { min: 0, step: 1, selectContents: true },
+        formatter: (cell) => {
+          const value = cell.getValue();
+          return value ? Number(value).toLocaleString() : '';
         },
-        validator: "required",
         cellEdited: (cell) => {
           const rowData = cell.getRow().getData();
-          if (rowData.ROW_STATUS !== 'I') {
-            cell.getRow().update({ ROW_STATUS: 'U' });
+          const newOutboundQty = Number(cell.getValue()) || 0;
+          const inboundQty = Number(rowData.inbound_quantity) || 0;
+
+   
+
+          // 출고 수량이 남은 재고 수량을 초과하는지 확인
+          if (newOutboundQty > inboundQty) {
+            alert(`출고 수량(${newOutboundQty})이 남은 재고 수량(${inboundQty})을 초과할 수 없습니다.`);
+            cell.setValue(0);
+            return;
+          }
+
+          // ROW_STATUS 설정
+          if (newOutboundQty > 0) {
+            if (!rowData.ROW_STATUS || rowData.ROW_STATUS === '') {
+              cell.getRow().update({ ROW_STATUS: 'I' });
+            }
           }
         }
       },
-      { field: "stock_code", title: "품목코드", width: 120, editor: false },
-      { field: "stock_name", title: "품목명", width: 150, editor: false },
       {
         field: "io_date",
         title: "출고일자",
         width: 120,
         editor: "date",
-        validator: "required",
         formatter: (cell) => {
           const value = cell.getValue();
           if (!value) return '';
@@ -717,67 +781,25 @@ export class StockStatusTable extends CommonTable {
         },
         cellEdited: (cell) => {
           const rowData = cell.getRow().getData();
-          if (rowData.ROW_STATUS !== 'I') {
-            cell.getRow().update({ ROW_STATUS: 'U' });
+          if (rowData.new_outbound_quantity > 0) {
+            if (!rowData.ROW_STATUS || rowData.ROW_STATUS === '') {
+              cell.getRow().update({ ROW_STATUS: 'I' });
+            }
           }
         }
       },
-      {
-        field: "quantity",
-        title: "수량",
-        width: 100,
-        editor: "number",
-        hozAlign: "right",
-        validator: "required",
-        formatter: (cell) => {
-          const value = cell.getValue();
-          return value ? Number(value).toLocaleString() : '0';
-        },
-        cellEdited: (cell) => {
-          const rowData = cell.getRow().getData();
-          if (rowData.ROW_STATUS !== 'I') {
-            cell.getRow().update({ ROW_STATUS: 'U' });
-          }
-        }
-      },
-      {
-        field: "unit",
-        title: "단위",
-        width: 100,
-        editor: "input",
-        cellEdited: (cell) => {
-          const rowData = cell.getRow().getData();
-          if (rowData.ROW_STATUS !== 'I') {
-            cell.getRow().update({ ROW_STATUS: 'U' });
-          }
-        }
-      },
+      { field: "unit", title: "단위", width: 80, editor: false },
       {
         field: "remark",
         title: "비고",
+        width: 200,
         editor: "input",
         cellEdited: (cell) => {
           const rowData = cell.getRow().getData();
-          if (rowData.ROW_STATUS !== 'I') {
-            cell.getRow().update({ ROW_STATUS: 'U' });
-          }
-        }
-      },
-      { field: "created_by_name", title: "등록자", width: 100, editor: false },
-      { field: "updated_by_name", title: "수정자", width: 100, editor: false },
-      {
-        field: "actions",
-        title: "삭제",
-        width: 80,
-        hozAlign: "center",
-        headerSort: false,
-        formatter: () => '<button class="delete-row px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">삭제</button>',
-        cellClick: (_e, cell) => {
-          const rowData = cell.getRow().getData();
-          if (rowData.ROW_STATUS !== 'I') {
-            cell.getRow().update({ ROW_STATUS: 'D' });
-          } else {
-            cell.getRow().delete();
+          if (rowData.new_outbound_quantity > 0) {
+            if (!rowData.ROW_STATUS || rowData.ROW_STATUS === '') {
+              cell.getRow().update({ ROW_STATUS: 'I' });
+            }
           }
         }
       }
@@ -805,58 +827,112 @@ export class StockStatusTable extends CommonTable {
       console.log('LOT API 응답 상태:', response.status);
       if (response.ok) {
         inboundLots = await response.json();
-        console.log('조회된 입고 LOT:', inboundLots);
-        inboundLots = inboundLots.filter(lot => lot.quantity > 0);
-        console.log('필터링 후 LOT:', inboundLots);
+        console.log('조회된 입고 LOT (전체):', inboundLots);
       }
     } catch (error) {
       console.error('입고 lot 조회 실패:', error);
     }
 
-    // TabulatorModal 생성 (CommonTable 기반 - getMainList로 자동 조회)
+    // 입고 데이터를 출고용 데이터로 변환
+    const today = new Date().toISOString().split('T')[0];
+    const outboundData = inboundLots.map(lot => {
+      console.log('입고 LOT 데이터:', lot);
+      return {
+        inbound_no: lot.inbound_no,
+        stock_code: stockCode,
+        stock_name: stockName,
+        inbound_date: lot.inbound_date,
+        preparation_date: lot.preparation_date,
+        inbound_quantity: lot.inbound_quantity || 0, // 원본 입고 수량
+        outbound_quantity: lot.outbound_quantity || 0, // 기존 출고 수량 합계
+        new_outbound_quantity: 0, // 새로 출고할 수량
+        io_date: today,
+        unit: lot.unit || stockData.unit || '',
+        remark: lot.remark || '',
+        ROW_STATUS: '' // 초기에는 빈 값, 출고 수량 입력 시 'I'로 설정
+      };
+    });
+
+    console.log('출고 모달 데이터:', outboundData);
+
+    // TabulatorModal 생성
     const modal = new TabulatorModal({
       modalId: 'outboundModal',
       title: '출고 등록',
       subtitle: `품목코드: ${stockCode} | 품목명: ${stockName} | 현재고: ${Number(currentQty).toLocaleString()}`,
       width: '1400px',
       tableHeight: '500px',
-      columns: this._getOutboundModalColumns(inboundLots),
-      placeholder: "출고 데이터가 없습니다. '+ 행 추가' 버튼을 눌러 출고 데이터를 추가하세요.",
-      addButtonText: '+ 행 추가',
+      columns: this._getOutboundModalColumns(),
+      placeholder: "출고 가능한 재고가 없습니다.",
+      showAddButton: false, // 행 추가 버튼 숨김
       saveButtonText: '💾 저장',
-      onAddRow: (table, modalInstance) => {
-        // 빈 행 추가 - 사용자가 입고 LOT를 선택하도록 함
-        const today = new Date().toISOString().split('T')[0];
-
-        modalInstance.addRow({
-          inbound_no: '', // 비워두고 사용자가 선택하도록
-          stock_code: stockCode,
-          stock_name: stockName,
-          io_date: today,
-          quantity: 0,
-          unit: stockData.unit || ''
-          // ROW_STATUS와 unicId는 addRow에서 자동 추가됨
-        });
-      },
-      ajaxUrl: '/api/outbound', // CommonTable이 사용할 API URL
-      filterData: {
-        ITEM_CD: stockCode,  // 백엔드 API 스펙에 맞춰 ITEM_CD 사용
-        ST_DT: '',           // 빈 값으로 전달
-        ED_DT: '',           // 빈 값으로 전달
-        ITEM_NM: ''          // 빈 값으로 전달
-      },
-      refreshOnSave: true, // 저장 후 자동 리프레시 활성화
-      onSaveSuccess: () => {
-        // 저장 성공 후 메인 테이블 리프레시
-        this.getMainList();
-        modal.close();
-      },
+      data: outboundData, // 입고 데이터를 초기 데이터로 설정
       onClose: () => {
         console.log('출고 모달 닫힘');
       }
     });
 
     await modal.open();
+
+    // 커스텀 저장 로직 설정
+    const saveBtn = document.getElementById('outboundModal_save');
+    if (saveBtn) {
+      // 기존 이벤트 제거하고 새로운 이벤트 등록
+      const newSaveBtn = saveBtn.cloneNode(true);
+      saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+
+      newSaveBtn.addEventListener('click', async () => {
+        // 저장 확인
+        if (!confirm('출고 등록을 진행하시겠습니까?')) {
+          return;
+        }
+
+        // 테이블에서 모든 데이터 가져오기
+        const allData = modal._tblList.getData();
+
+        // 신규 출고 수량이 입력된 행만 필터링
+        const outboundRecords = allData.filter(row => {
+          return Number(row.new_outbound_quantity) > 0;
+        });
+
+        if (outboundRecords.length === 0) {
+          alert('출고 수량을 입력해주세요.');
+          return;
+        }
+
+        // 출고 데이터 형식으로 변환
+        const saveData = outboundRecords.map(row => ({
+          inbound_no: row.inbound_no,
+          stock_code: row.stock_code,
+          io_date: row.io_date,
+          quantity: row.new_outbound_quantity,
+          unit: row.unit,
+          remark: row.remark,
+          ROW_STATUS: 'I'
+        }));
+
+        console.log('저장할 출고 데이터:', saveData);
+
+        try {
+          const response = await fetch('/api/outbound', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: saveData })
+          });
+
+          if (!response.ok) {
+            throw new Error('출고 등록 실패');
+          }
+
+          alert('출고 등록이 완료되었습니다.');
+          this.getMainList();
+          modal.close();
+        } catch (error) {
+          console.error('출고 등록 실패:', error);
+          alert('출고 등록 중 오류가 발생했습니다.');
+        }
+      });
+    }
   }
 
   /**
