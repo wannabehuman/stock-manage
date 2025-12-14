@@ -866,13 +866,26 @@ export class StockStatusTable extends CommonTable {
       placeholder: "출고 가능한 재고가 없습니다.",
       showAddButton: false, // 행 추가 버튼 숨김
       saveButtonText: '💾 저장',
-      data: outboundData, // 입고 데이터를 초기 데이터로 설정
+      autoLoad: false, // 자동 데이터 로드 비활성화
       onClose: () => {
         console.log('출고 모달 닫힘');
       }
     });
 
     await modal.open();
+
+    // 테이블이 완전히 초기화될 때까지 대기
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // 모달이 열린 후 데이터 직접 설정
+    if (modal._tblList) {
+      try {
+        modal._tblList.setData(outboundData);
+        console.log('출고 모달 데이터 설정 완료');
+      } catch (error) {
+        console.error('데이터 설정 실패:', error);
+      }
+    }
 
     // 커스텀 저장 로직 설정
     const saveBtn = document.getElementById('outboundModal_save');

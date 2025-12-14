@@ -108,12 +108,10 @@
 </div>
 
 <!-- 입출고내역 테이블 -->
-<Card class="p-3 w-full max-w-full flex-1 flex flex-col">
+<Card class="p-3 w-full max-w-full overflow-hidden flex-1 flex flex-col">
   <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-3 flex-shrink-0">
     <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">입출고내역 전체보기</h2>
   </div>
-  <div class="my-tabulator" style="height: 100%;">
-    <div id="allHistoryTable" class="w-full flex-1 min-h-0"></div>
-  </div>
+  <div id="allHistoryTable" class="w-full flex-1 min-h-0"></div>
 </Card>
 </div>

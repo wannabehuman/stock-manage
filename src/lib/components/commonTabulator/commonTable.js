@@ -21,6 +21,31 @@ axios.interceptors.request.use(
   }
 );
 
+// axios 응답 인터셉터 - 401 에러 시 자동 로그아웃 처리
+axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // 401 Unauthorized 에러 처리
+    if (error.response && error.response.status === 401) {
+      // 로컬 스토리지 및 세션 스토리지에서 토큰 제거
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('user');
+
+      // 사용자에게 메시지 표시
+      alert('토큰이 만료되어 자동 로그아웃 되었습니다. 다시 로그인 해주세요.');
+
+      // 로그인 페이지로 리다이렉트
+      window.location.href = '/login';
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // 유틸리티 함수들
 function uniqid() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);

@@ -27,6 +27,9 @@ export class TabulatorModal extends CommonTable {
     this.onAddRow = options.onAddRow || null;
     this.onClose = options.onClose || null;
 
+    // 자동 데이터 로드 설정
+    this.autoLoad = options.autoLoad !== false;
+
     // 모달 DOM 참조
     this.modal = null;
 
@@ -154,11 +157,13 @@ export class TabulatorModal extends CommonTable {
     await new Promise(resolve => setTimeout(resolve, 50));
 
     // CommonTable의 init() 메서드로 테이블 생성
-    this.setTableBuilt(); // 테이블 자동 빌드 활성화
+    if (this.autoLoad) {
+      this.setTableBuilt(); // 자동 로드가 필요한 경우만 활성화
+    }
     this.init();
 
-    // 데이터 자동 로드 (ajaxUrl이 설정되어 있으면)
-    if (this._ajaxUrl && this._ajaxUrl !== './index.ajax.php') {
+    // 데이터 자동 로드 (ajaxUrl이 설정되어 있고 빈 문자열이 아닐 때만)
+    if (this.autoLoad && this._ajaxUrl && this._ajaxUrl !== './index.ajax.php' && this._ajaxUrl !== '') {
       this.getMainList();
     }
 

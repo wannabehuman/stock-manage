@@ -102,8 +102,6 @@
   <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-3 flex-shrink-0">
     <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">입고이력조회</h2>
   </div>
-  <div class="my-tabulator" style="height: 100%;">
-    <div id="inboundHistoryTable" class="w-full flex-1 min-h-0"></div>
-  </div>
+  <div id="inboundHistoryTable" class="w-full flex-1 min-h-0"></div>
 </Card>
 </div>
